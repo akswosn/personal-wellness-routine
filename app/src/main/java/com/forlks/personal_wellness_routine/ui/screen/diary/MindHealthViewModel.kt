@@ -42,11 +42,14 @@ class MindHealthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            val positive = analysisRepository.countPositiveDiaries()
-            val total = analysisRepository.countTotalDiaries()
-            val score = MindHealthCalculator.calculate(positive, total)
+            // v0.0.2: 단어 기반 마음건강도 계산
+            // mindHealthScore 컬럼에 이미 단어 기반 점수가 저장되어 있음
+            val last30Temp = analysisRepository.getLast30Days()
+            val validScores = last30Temp.filter { it.mindHealthScore >= 0 }
+            val score = if (validScores.isEmpty()) -1
+                        else validScores.map { it.mindHealthScore }.average().toInt().coerceIn(0, 100)
 
-            val last30 = analysisRepository.getLast30Days()
+            val last30 = last30Temp
             val weeklyTrend = buildWeeklyTrend(last30)
             val emotionDist = buildEmotionDistribution(last30)
 
@@ -74,9 +77,10 @@ class MindHealthViewModel @Inject constructor(
             val week = data.filter {
                 it.date >= weekStart.format(fmt) && it.date <= weekEnd.format(fmt)
             }
-            val pos = week.count { it.diaryEmotionScore > 0 && it.diaryCharCount >= 50 }
-            val tot = week.count { it.diaryCharCount >= 50 }
-            val weekScore = if (tot >= 2) MindHealthCalculator.calculate(pos, tot) else 0
+            val weekScore = if (week.isNotEmpty()) {
+                val scores = week.filter { it.mindHealthScore >= 0 }.map { it.mindHealthScore }
+                if (scores.isNotEmpty()) scores.average().toInt().coerceIn(0, 100) else 0
+            } else 0
             label to weekScore
         }
     }

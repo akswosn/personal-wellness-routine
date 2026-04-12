@@ -1,29 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    마음흐름 스플래시 아이콘 — 새 앱 아이콘과 동일한 디자인
+    (AndroidX SplashScreen API: windowSplashScreenAnimatedIcon 용)
+    배경색은 themes.xml windowSplashScreenBackground 에서 지정
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Water drop (wellness) -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,12 C54,12 78,34 78,54 A24,24 0 0 1 30,54 C30,34 54,12 54,12 Z" />
+    <!-- ① 배경: 하늘 → 산호 그라디언트 -->
+    <path android:pathData="M0,0 H108 V108 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="0"
+                android:endX="54" android:endY="108"
+                android:type="linear">
+                <item android:offset="0"    android:color="#FF4AAEE4"/>
+                <item android:offset="0.35" android:color="#FF7FCCE8"/>
+                <item android:offset="0.58" android:color="#FFFABCA0"/>
+                <item android:offset="1"    android:color="#FFF47860"/>
+            </gradient>
+        </aapt:attr>
+    </path>
 
-    <!-- Center vein -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#5EEAD4"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:pathData="M54,20 L54,72" />
+    <!-- ② 태양 글로우 -->
+    <path android:pathData="M46,48 a21,21 0 1,0 42,0 a21,21 0 1,0 -42,0"
+        android:fillColor="#60F4A060"/>
 
-    <!-- W-wave (flow) -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="6"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M16,86 C28,68 42,104 54,86 C66,68 80,104 92,86" />
+    <!-- ③ 태양 본체 -->
+    <path android:pathData="M52,48 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0"
+        android:fillColor="#F4804C"/>
+
+    <!-- ④ 뒤 민트 파도 -->
+    <path android:pathData="M-2,50 C14,42 32,38 50,46 C60,51 66,50 78,40 C90,32 104,40 110,44 L110,110 L-2,110 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="38"
+                android:endX="54" android:endY="110"
+                android:type="linear">
+                <item android:offset="0"   android:color="#FF86D8C8"/>
+                <item android:offset="0.4" android:color="#FF5EC4B4"/>
+                <item android:offset="1"   android:color="#FFF4B090"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ⑤ 크림 하이라이트 파도 -->
+    <path android:pathData="M-2,62 C16,56 34,60 54,58 C74,56 92,62 110,58 L110,110 L-2,110 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="56"
+                android:endX="54" android:endY="110"
+                android:type="linear">
+                <item android:offset="0"   android:color="#D8F5E2D0"/>
+                <item android:offset="0.4" android:color="#C0F4D8C0"/>
+                <item android:offset="1"   android:color="#90F4B898"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ⑥ 앞 복숭아 파도 -->
+    <path android:pathData="M-2,72 C18,67 38,70 58,68 C78,66 96,72 110,68 L110,110 L-2,110 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54" android:startY="66"
+                android:endX="54" android:endY="110"
+                android:type="linear">
+                <item android:offset="0"   android:color="#FFF5D8C0"/>
+                <item android:offset="0.5" android:color="#FFF4B088"/>
+                <item android:offset="1"   android:color="#FFF4906A"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- ⑦ 별 1 (왼쪽 중간) -->
+    <path android:pathData="M26,43 L27.8,38.2 L29.6,43 L34.4,44.8 L29.6,46.6 L27.8,51.4 L26,46.6 L21.2,44.8 Z"
+        android:fillColor="#FFFFFBE8"/>
+
+    <!-- ⑧ 별 2 (왼쪽 위, 작은) -->
+    <path android:pathData="M39,28 L40.2,24.4 L41.4,28 L45,29.2 L41.4,30.4 L40.2,34 L39,30.4 L35.4,29.2 Z"
+        android:fillColor="#FFFFFBE8"/>
+
+    <!-- ⑨ 별 3 (오른쪽) -->
+    <path android:pathData="M88,36 L89.6,31.2 L91.2,36 L96,37.6 L91.2,39.2 L89.6,44 L88,39.2 L83.2,37.6 Z"
+        android:fillColor="#FFFFFBE8"/>
+
 </vector>

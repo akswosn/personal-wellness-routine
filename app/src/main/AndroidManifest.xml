@@ -12,10 +12,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Personalwellnessroutine">
-        <!-- TODO: Replace with real AdMob App ID from https://admob.google.com -->
+
+        <!--
+            AdMob App ID — 빌드타입에 따라 build.gradle.kts의 manifestPlaceholders["admobAppId"] 에서 주입
+            Debug  : ca-app-pub-3940256099942544~3347511713 (Google 공식 테스트 ID)
+            Release: TODO — 출시 전 AdMob 콘솔에서 발급받은 실제 App ID 로 교체
+        -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="${admobAppId}" />
 
         <activity
             android:name=".MainActivity"
@@ -24,7 +29,6 @@
             android:theme="@style/Theme.WellFlow.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

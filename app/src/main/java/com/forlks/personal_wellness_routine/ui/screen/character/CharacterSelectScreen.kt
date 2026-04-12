@@ -23,7 +23,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.forlks.personal_wellness_routine.data.preferences.AppPreferences
 import com.forlks.personal_wellness_routine.domain.model.CharacterType
 import com.forlks.personal_wellness_routine.ui.theme.WellGreen
-import com.forlks.personal_wellness_routine.ui.theme.WellSurfaceVariant
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -78,7 +77,7 @@ fun CharacterSelectScreen(
         // Hint card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = WellSurfaceVariant),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -162,7 +161,7 @@ private fun CharacterCard(
         onClick = onClick,
         modifier = Modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) WellGreen.copy(alpha = 0.15f) else WellSurfaceVariant
+            containerColor = if (isSelected) WellGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
         ),
         border = if (isSelected) BorderStroke(2.dp, WellGreen) else null,
         shape = RoundedCornerShape(16.dp)

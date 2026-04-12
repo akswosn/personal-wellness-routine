@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forlks.personal_wellness_routine.data.repository.ChatRepository
+import com.forlks.personal_wellness_routine.data.repository.DailyHealthRepository
 import com.forlks.personal_wellness_routine.data.repository.WellnessPointRepository
 import com.forlks.personal_wellness_routine.domain.model.ChatAnalysisResult
 import com.forlks.personal_wellness_routine.domain.model.WpEvent
@@ -28,7 +29,8 @@ data class KakaoUiState(
 @HiltViewModel
 class KakaoViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
-    private val wellnessPointRepository: WellnessPointRepository
+    private val wellnessPointRepository: WellnessPointRepository,
+    private val dailyHealthRepository: DailyHealthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(KakaoUiState())
@@ -63,6 +65,17 @@ class KakaoViewModel @Inject constructor(
                 wellnessPointRepository.earnPoints(
                     eventType = WpEvent.CHAT_ANALYSIS,
                     description = "카카오톡 대화 분석: $fileName"
+                )
+
+                // 일 건강도 chatTempScore · relationScore 업데이트 (v0.0.2 레벨 기반)
+                val rawScore = result.temperature.toInt()          // 0~100
+                val level = KakaoParser.scoreToLevel(rawScore)     // 1~5
+                val chatTempScore = level * 4f                     // 4/8/12/16/20
+                val relationLevel = KakaoParser.scoreToLevel(result.relationshipScore.toInt())
+                val relationScore = relationLevel * 2f             // 2/4/6/8/10
+                dailyHealthRepository.updateToday(
+                    chatTempScore = chatTempScore,
+                    relationScore = relationScore
                 )
 
                 _uiState.update {
