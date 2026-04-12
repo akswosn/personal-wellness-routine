@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.Personalwellnessroutine" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.WellFlow.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0F766E</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">600</item>
+        <item name="postSplashScreenTheme">@style/Theme.Personalwellnessroutine</item>
+    </style>
 </resources>
