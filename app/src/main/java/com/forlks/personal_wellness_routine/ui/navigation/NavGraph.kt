@@ -9,7 +9,9 @@ import androidx.navigation.navArgument
 import com.forlks.personal_wellness_routine.ui.screen.character.CharacterProfileScreen
 import com.forlks.personal_wellness_routine.ui.screen.character.CharacterSelectScreen
 import com.forlks.personal_wellness_routine.ui.screen.diary.DiaryScreen
+import com.forlks.personal_wellness_routine.ui.screen.diary.MindHealthScreen
 import com.forlks.personal_wellness_routine.ui.screen.home.HomeScreen
+import com.forlks.personal_wellness_routine.ui.screen.stats.RoutineAchievementScreen
 import com.forlks.personal_wellness_routine.ui.screen.kakao.*
 import com.forlks.personal_wellness_routine.ui.screen.onboarding.OnboardingScreen
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineCreateScreen
@@ -98,6 +100,16 @@ fun WellFlowNavGraph(
 
         composable(Screen.CharacterProfile.route) {
             CharacterProfileScreen(onBack = { navController.popBackStack() })
+        }
+
+        // SCR-AN1 루틴 달성도 분석
+        composable(Screen.RoutineAchievement.route) {
+            RoutineAchievementScreen(onBack = { navController.popBackStack() })
+        }
+
+        // SCR-AN3 마음 건강도
+        composable(Screen.MindHealth.route) {
+            MindHealthScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Screen.KakaoImport.route) {

@@ -21,6 +21,10 @@ sealed class Screen(val route: String) {
     // Character
     object CharacterProfile : Screen("character_profile")
 
+    // Analysis screens (SCR-AN1~3)
+    object RoutineAchievement : Screen("routine_achievement")
+    object MindHealth : Screen("mind_health")
+
     // KakaoTalk analysis
     object KakaoImport : Screen("kakao_import")
     object KakaoAnalyzing : Screen("kakao_analyzing/{fileUri}") {

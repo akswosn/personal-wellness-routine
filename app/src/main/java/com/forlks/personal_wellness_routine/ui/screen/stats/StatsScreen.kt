@@ -2,6 +2,7 @@ package com.forlks.personal_wellness_routine.ui.screen.stats
 
 import android.content.Intent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -364,6 +365,84 @@ fun StatsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("💬 카카오톡으로 공유")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            // 7. 분석 바로가기 섹션
+            item {
+                Text(
+                    text = "📊 상세 분석",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // 루틴 달성도 분석 카드
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onNavigate(Screen.RoutineAchievement.route) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = WellGreen.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("📈", fontSize = 28.sp)
+                            Text(
+                                "루틴 달성도",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = WellGreen
+                            )
+                            Text(
+                                "일간·주간·월간\n등급 분석",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    // 마음 건강도 카드
+                    Card(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onNavigate(Screen.MindHealth.route) },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF29B6F6).copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("💙", fontSize = 28.sp)
+                            Text(
+                                "마음 건강도",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF29B6F6)
+                            )
+                            Text(
+                                "일기 감정 분포\n4주 추이 분석",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }

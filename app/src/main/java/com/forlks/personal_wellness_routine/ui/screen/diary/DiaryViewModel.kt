@@ -2,10 +2,14 @@ package com.forlks.personal_wellness_routine.ui.screen.diary
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.forlks.personal_wellness_routine.data.db.entity.AnalysisSummaryEntity
+import com.forlks.personal_wellness_routine.data.repository.AnalysisRepository
 import com.forlks.personal_wellness_routine.data.repository.DiaryRepository
+import com.forlks.personal_wellness_routine.data.repository.RoutineRepository
 import com.forlks.personal_wellness_routine.data.repository.WellnessPointRepository
 import com.forlks.personal_wellness_routine.domain.model.DiaryEntry
 import com.forlks.personal_wellness_routine.domain.model.WpEvent
+import com.forlks.personal_wellness_routine.util.RoutineAchievementCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +29,9 @@ data class DiaryUiState(
 @HiltViewModel
 class DiaryViewModel @Inject constructor(
     private val diaryRepository: DiaryRepository,
-    private val wellnessPointRepository: WellnessPointRepository
+    private val wellnessPointRepository: WellnessPointRepository,
+    private val analysisRepository: AnalysisRepository,
+    private val routineRepository: RoutineRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiaryUiState())
@@ -58,33 +64,55 @@ class DiaryViewModel @Inject constructor(
 
     fun saveDiary(entry: DiaryEntry) {
         viewModelScope.launch {
+            val emotion = analyzeSentiment(entry.content)
             val scoredEntry = entry.copy(
-                emotionScore = analyzeSentiment(entry.content)
+                emotionScore = emotion,
+                emotionLabel = buildEmotionLabel(emotion)
             )
             diaryRepository.saveDiary(scoredEntry)
-            wellnessPointRepository.earnPoints(
-                eventType = WpEvent.DIARY,
-                description = "일기 작성"
-            )
+
+            // 50자 이상일 때만 WP 적립 + 분석 스냅샷 저장
+            if (entry.content.length >= 50) {
+                wellnessPointRepository.earnPoints(
+                    eventType = WpEvent.DIARY,
+                    description = "일기 작성 (+3 WP)"
+                )
+                saveAnalysisSnapshot(scoredEntry)
+            }
+
             _uiState.update { it.copy(currentEntry = scoredEntry) }
         }
+    }
+
+    private suspend fun saveAnalysisSnapshot(entry: DiaryEntry) {
+        val (routineCompleted, routineTotal) = routineRepository.getTodayStats()
+        val routineScore = RoutineAchievementCalculator.dailyScore(routineCompleted, routineTotal)
+
+        val existing = analysisRepository.getByDate(entry.date)
+        val snapshot = AnalysisSummaryEntity(
+            id = existing?.id ?: 0,
+            date = entry.date,
+            routineTotal = routineTotal,
+            routineCompleted = routineCompleted,
+            routineScore = routineScore,
+            routineGrade = RoutineAchievementCalculator.gradeFrom(routineScore),
+            diaryCharCount = entry.content.length,
+            diaryEmotionLabel = entry.emotionLabel,
+            diaryEmotionScore = entry.emotionScore,
+            mindHealthScore = -1
+        )
+        analysisRepository.upsert(snapshot)
     }
 
     fun deleteDiary(entry: DiaryEntry) {
         viewModelScope.launch {
             diaryRepository.deleteDiary(entry)
-            val currentDate = _uiState.value.selectedDate
-            if (entry.date == currentDate) {
+            if (entry.date == _uiState.value.selectedDate) {
                 _uiState.update { it.copy(currentEntry = null) }
             }
         }
     }
 
-    /**
-     * Simple on-device sentiment analysis.
-     * Returns a score in [-1.0, 1.0]:
-     *   positive keywords push score up, negative keywords push score down.
-     */
     private fun analyzeSentiment(content: String): Float {
         val positiveWords = setOf(
             "좋아", "행복", "기쁘", "사랑", "감사", "고마워", "설레", "신나", "재미",
@@ -96,18 +124,21 @@ class DiaryViewModel @Inject constructor(
             "지쳐", "아파", "걱정", "불안", "무서", "후회", "억울", "외로", "피곤",
             "스트레스", "괴롭", "두렵", "실패", "좌절", "포기", "답답", "막막"
         )
+        var pos = 0; var neg = 0
+        positiveWords.forEach { if (content.contains(it)) pos++ }
+        negativeWords.forEach { if (content.contains(it)) neg++ }
+        val total = pos + neg
+        return if (total == 0) 0f
+        else ((pos - neg).toFloat() / total.toFloat()).coerceIn(-1f, 1f)
+    }
 
-        var positiveCount = 0
-        var negativeCount = 0
-
-        positiveWords.forEach { word -> if (content.contains(word)) positiveCount++ }
-        negativeWords.forEach { word -> if (content.contains(word)) negativeCount++ }
-
-        val total = positiveCount + negativeCount
-        return if (total == 0) {
-            0f
-        } else {
-            ((positiveCount - negativeCount).toFloat() / total.toFloat()).coerceIn(-1f, 1f)
-        }
+    private fun buildEmotionLabel(score: Float): String = when {
+        score >= 0.5f  -> "기쁨"
+        score >= 0.2f  -> "행복"
+        score >= 0.05f -> "감사"
+        score > -0.05f -> "보통"
+        score > -0.2f  -> "걱정"
+        score > -0.5f  -> "슬픔"
+        else           -> "우울"
     }
 }

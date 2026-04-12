@@ -1,8 +1,10 @@
 package com.forlks.personal_wellness_routine.ui.screen.kakao
 
+import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,11 +52,21 @@ fun KakaoImportScreen(
     viewModel: KakaoViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
+    // GetContent() 는 임시 권한만 부여 → 화면 전환 후 만료됨
+    // OpenDocument() + takePersistableUriPermission 으로 영구 읽기 권한 확보
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        uri?.let { onFileSelected(it.toString()) }
+        uri?.let {
+            // 영구 읽기 권한 취득 (Navigation 전환 이후에도 유효)
+            context.contentResolver.takePersistableUriPermission(
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+            onFileSelected(it.toString())
+        }
     }
 
     Scaffold(
@@ -127,7 +139,7 @@ fun KakaoImportScreen(
             // File picker button
             item {
                 Button(
-                    onClick = { launcher.launch("text/*") },
+                    onClick = { launcher.launch(arrayOf("text/plain", "text/*")) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
