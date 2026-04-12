@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Water drop (wellness) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,12 C54,12 78,34 78,54 A24,24 0 0 1 30,54 C30,34 54,12 54,12 Z" />
+
+    <!-- Center vein -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#5EEAD4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M54,20 L54,72" />
+
+    <!-- W-wave (flow) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M16,86 C28,68 42,104 54,86 C66,68 80,104 92,86" />
+</vector>
