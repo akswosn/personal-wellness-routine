@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.forlks.personal_wellness_routine.ui.theme.WellGreen
-import com.forlks.personal_wellness_routine.ui.theme.WellSurfaceVariant
 
 @Composable
 fun OnboardingScreen(
@@ -40,7 +39,7 @@ fun OnboardingScreen(
         Text("🌿", fontSize = 56.sp)
         Spacer(Modifier.height(8.dp))
         Text(
-            "WellFlow",
+            "마음흐름",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             color = WellGreen
@@ -139,7 +138,7 @@ private fun StepGoal(selectedGoal: String, onGoalSelect: (String) -> Unit) {
                 onClick = { onGoalSelect(key) },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (selected) WellGreen.copy(alpha = 0.15f) else WellSurfaceVariant
+                    containerColor = if (selected) WellGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                 ),
                 border = if (selected) androidx.compose.foundation.BorderStroke(2.dp, WellGreen) else null,
                 shape = RoundedCornerShape(16.dp)
@@ -157,7 +156,7 @@ private fun StepGoal(selectedGoal: String, onGoalSelect: (String) -> Unit) {
 @Composable
 private fun StepPreview() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("WellFlow로 할 수 있는 것", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("마음흐름으로 할 수 있는 것", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(16.dp))
         listOf(
             "📋 루틴 트래킹" to "매일 건강한 습관 관리",
@@ -167,7 +166,7 @@ private fun StepPreview() {
         ).forEach { (icon, desc) ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = WellSurfaceVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -24,7 +24,6 @@ import com.forlks.personal_wellness_routine.domain.model.DiaryEntry
 import com.forlks.personal_wellness_routine.ui.component.BottomNavBar
 import com.forlks.personal_wellness_routine.ui.navigation.Screen
 import com.forlks.personal_wellness_routine.ui.theme.WellGreen
-import com.forlks.personal_wellness_routine.ui.theme.WellSurfaceVariant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -247,7 +246,7 @@ fun DiaryScreen(
                     }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = WellSurfaceVariant)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),

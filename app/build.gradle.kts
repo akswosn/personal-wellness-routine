@@ -14,26 +14,46 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.0.1-beta"
+        versionName = "0.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        compose = true
+        buildConfig = true   // BuildConfig 클래스 생성 활성화
+    }
+
     buildTypes {
+        debug {
+            isDebuggable = true
+            // ── 광고 OFF ──────────────────────────────────
+            buildConfigField("boolean", "ADS_ENABLED", "false")
+            // 테스트 AdMob App ID (manifest 에서 참조)
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+            // 배너 단위 ID (사용되지 않음 — ADS_ENABLED=false)
+            buildConfigField("String", "BANNER_AD_UNIT_ID",
+                "\"ca-app-pub-3940256099942544/6300978111\"")
+        }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // ── 광고 ON ───────────────────────────────────
+            buildConfigField("boolean", "ADS_ENABLED", "true")
+            // TODO: 출시 전 실제 AdMob App ID 로 교체
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+            // TODO: 출시 전 실제 배너 Ad Unit ID 로 교체
+            buildConfigField("String", "BANNER_AD_UNIT_ID",
+                "\"ca-app-pub-3940256099942544/6300978111\"")
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        compose = true
     }
 }
 

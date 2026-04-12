@@ -25,7 +25,6 @@ import com.forlks.personal_wellness_routine.domain.model.WpEvent
 import com.forlks.personal_wellness_routine.ui.theme.LevelGold
 import com.forlks.personal_wellness_routine.ui.theme.LevelGray
 import com.forlks.personal_wellness_routine.ui.theme.LevelPurple
-import com.forlks.personal_wellness_routine.ui.theme.WellSurfaceVariant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,7 +226,7 @@ fun CharacterProfileScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = WellSurfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Column(
                         modifier = Modifier.padding(14.dp),

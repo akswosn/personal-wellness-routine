@@ -1,6 +1,7 @@
 package com.forlks.personal_wellness_routine
 
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,7 +23,17 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var prefs: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        // 스플래시 시작 시각 기록
+        val splashStartMs = SystemClock.elapsedRealtime()
+        val splashMinMs = 2_000L   // 최소 2초 표시
+
+        val splashScreen = installSplashScreen()
+
+        // keepOnScreen: 2초가 채워질 때까지 스플래시 유지
+        splashScreen.setKeepOnScreenCondition {
+            SystemClock.elapsedRealtime() - splashStartMs < splashMinMs
+        }
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

@@ -1,29 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    마음흐름 아이콘 포그라운드 — 투명 레이어
+    전체 디자인은 ic_launcher_background.xml 에 포함되어 있음
+    모노크롬 모드용으로 최소한의 심볼(파도)만 정의
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Water drop shape (wellness) — top point at (54,24), circle base r=18 centered at (54,56) -->
+    <!-- 투명 배경 (adaptive icon foreground safe zone 확보) -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,24 C54,24 72,40 72,56 A18,18 0 0 1 36,56 C36,40 54,24 54,24 Z" />
+        android:pathData="M0,0 H108 V108 H0 Z"
+        android:fillColor="#00000000"/>
 
-    <!-- Center vein line inside drop -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#5EEAD4"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:pathData="M54,31 L54,69" />
-
-    <!-- Flowing W-wave below drop (flow) -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="5"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M20,80 C30,65 42,95 54,80 C66,65 78,95 88,80" />
 </vector>

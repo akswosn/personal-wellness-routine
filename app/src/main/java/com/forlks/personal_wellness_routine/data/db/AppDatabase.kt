@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.forlks.personal_wellness_routine.data.db.dao.*
 import com.forlks.personal_wellness_routine.data.db.entity.*
+import com.forlks.personal_wellness_routine.data.db.dao.DailyHealthScoreDao
+import com.forlks.personal_wellness_routine.data.db.entity.DailyHealthScoreEntity
 
 @Database(
     entities = [
@@ -12,9 +14,10 @@ import com.forlks.personal_wellness_routine.data.db.entity.*
         DiaryEntity::class,
         ChatAnalysisEntity::class,
         WellnessPointHistoryEntity::class,
-        AnalysisSummaryEntity::class
+        AnalysisSummaryEntity::class,
+        DailyHealthScoreEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,4 +26,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatAnalysisDao(): ChatAnalysisDao
     abstract fun wellnessPointDao(): WellnessPointDao
     abstract fun analysisSummaryDao(): AnalysisSummaryDao
+    abstract fun dailyHealthScoreDao(): DailyHealthScoreDao
 }
