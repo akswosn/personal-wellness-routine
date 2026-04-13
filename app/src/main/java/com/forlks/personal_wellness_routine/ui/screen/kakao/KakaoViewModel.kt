@@ -8,6 +8,7 @@ import com.forlks.personal_wellness_routine.data.repository.ChatRepository
 import com.forlks.personal_wellness_routine.data.repository.DailyHealthRepository
 import com.forlks.personal_wellness_routine.data.repository.WellnessPointRepository
 import com.forlks.personal_wellness_routine.domain.model.ChatAnalysisResult
+import com.forlks.personal_wellness_routine.domain.model.DailyChatResult
 import com.forlks.personal_wellness_routine.domain.model.WpEvent
 import com.forlks.personal_wellness_routine.util.KakaoParser
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,13 +17,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 data class KakaoUiState(
     val recentFiles: List<ChatAnalysisResult> = emptyList(),
     val isAnalyzing: Boolean = false,
     val analysisProgress: Float = 0f,
+    val progressCurrentDay: Int = 0,
+    val progressTotalDays: Int = 0,
     val currentAnalysis: ChatAnalysisResult? = null,
+    val currentDailyResults: List<DailyChatResult> = emptyList(),
+    val calendarData: Map<String, DailyChatResult> = emptyMap(), // date → merged result
     val error: String? = null
 )
 
@@ -38,6 +45,7 @@ class KakaoViewModel @Inject constructor(
 
     init {
         loadRecentAnalyses()
+        loadCalendarData()
     }
 
     fun analyzeFile(context: Context, uri: Uri, fileName: String) {
@@ -46,50 +54,71 @@ class KakaoViewModel @Inject constructor(
                 it.copy(
                     isAnalyzing = true,
                     analysisProgress = 0f,
+                    progressCurrentDay = 0,
+                    progressTotalDays = 0,
                     error = null,
                     currentAnalysis = null
                 )
             }
             try {
-                _uiState.update { it.copy(analysisProgress = 0.2f) }
+                // 날짜별 진행률 실시간 업데이트
+                val fullResult = KakaoParser.parseAndAnalyzeFull(
+                    context, uri, fileName
+                ) { current, total ->
+                    val progress = if (total > 0) (current.toFloat() / total.toFloat()) * 0.8f else 0f
+                    _uiState.update {
+                        it.copy(
+                            analysisProgress = progress,
+                            progressCurrentDay = current,
+                            progressTotalDays = total
+                        )
+                    }
+                }
 
-                val result = KakaoParser.parseAndAnalyze(context, uri, fileName)
+                _uiState.update { it.copy(analysisProgress = 0.85f) }
 
-                _uiState.update { it.copy(analysisProgress = 0.7f) }
+                // 전체 분석 저장
+                val savedId = chatRepository.saveAnalysis(fullResult.chatAnalysis)
+                val savedResult = fullResult.chatAnalysis.copy(id = savedId)
 
-                val savedId = chatRepository.saveAnalysis(result)
-                val savedResult = result.copy(id = savedId)
+                // 날짜별 결과 저장
+                chatRepository.saveDailyResults(savedId, fullResult.dailyResults)
 
-                _uiState.update { it.copy(analysisProgress = 0.9f) }
+                _uiState.update { it.copy(analysisProgress = 0.95f) }
 
-                // 출석 WP 자동 적립 (하루 최초 1회)
+                // WP 적립
                 wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
                 wellnessPointRepository.earnPoints(
                     eventType = WpEvent.CHAT_ANALYSIS,
                     description = "카카오톡 대화 분석: $fileName"
                 )
 
-                // 일 건강도 chatTempScore · relationScore 업데이트 (v0.0.2 레벨 기반)
-                val rawScore = result.temperature.toInt()          // 0~100
-                val level = KakaoParser.scoreToLevel(rawScore)     // 1~5
-                val chatTempScore = level * 4f                     // 4/8/12/16/20
-                val relationLevel = KakaoParser.scoreToLevel(result.relationshipScore.toInt())
-                val relationScore = relationLevel * 2f             // 2/4/6/8/10
-                dailyHealthRepository.updateToday(
-                    chatTempScore = chatTempScore,
-                    relationScore = relationScore
-                )
+                // 오늘 날짜 기준 일별 결과로 건강도 업데이트
+                val todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                val todayResult = fullResult.dailyResults.find { it.date == todayStr }
+                    ?: fullResult.dailyResults.lastOrNull()
+                if (todayResult != null) {
+                    val level = KakaoParser.scoreToLevel(todayResult.temperature.toInt())
+                    val chatTempScore = level * 4f
+                    val relationLevel = KakaoParser.scoreToLevel(todayResult.relationshipScore.toInt())
+                    dailyHealthRepository.updateToday(
+                        chatTempScore = chatTempScore,
+                        relationScore = relationLevel * 2f
+                    )
+                }
 
                 _uiState.update {
                     it.copy(
                         isAnalyzing = false,
                         analysisProgress = 1f,
                         currentAnalysis = savedResult,
+                        currentDailyResults = fullResult.dailyResults,
                         error = null
                     )
                 }
 
                 loadRecentAnalyses()
+                loadCalendarData()
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -106,7 +135,10 @@ class KakaoViewModel @Inject constructor(
         viewModelScope.launch {
             val analyses = chatRepository.getRecentAnalyses(limit = 50)
             val found = analyses.find { it.id == id }
-            _uiState.update { it.copy(currentAnalysis = found) }
+            if (found != null) {
+                val dailyResults = chatRepository.getDailyResults(id)
+                _uiState.update { it.copy(currentAnalysis = found, currentDailyResults = dailyResults) }
+            }
         }
     }
 
@@ -114,6 +146,40 @@ class KakaoViewModel @Inject constructor(
         viewModelScope.launch {
             val recent = chatRepository.getRecentAnalyses(limit = 10)
             _uiState.update { it.copy(recentFiles = recent) }
+        }
+    }
+
+    fun loadCalendarData() {
+        viewModelScope.launch {
+            chatRepository.getAllDailyFlow().collect { allDaily ->
+                // 같은 날짜에 여러 파일이 있으면 머지 (메시지 합산, 온도 재계산)
+                val grouped = allDaily.groupBy { it.date }
+                val merged = grouped.mapValues { (_, results) ->
+                    if (results.size == 1) {
+                        results.first()
+                    } else {
+                        val totalMsgs = results.sumOf { it.totalMessages }
+                        val totalPos = results.sumOf { it.positiveCount }
+                        val totalNeg = results.sumOf { it.negativeCount }
+                        val totalNeu = results.sumOf { it.neutralCount }
+                        val sentTotal = (totalPos + totalNeg).coerceAtLeast(1)
+                        val mergedTemp = (totalPos.toFloat() / sentTotal.toFloat()) * 100f
+                        val totalAll = totalMsgs.coerceAtLeast(1)
+                        val mergedRel = ((totalPos.toFloat() / totalAll) * 100f +
+                                        (totalNeu.toFloat() / totalAll) * 50f -
+                                        (totalNeg.toFloat() / totalAll) * 50f).coerceIn(0f, 100f)
+                        results.first().copy(
+                            totalMessages = totalMsgs,
+                            positiveCount = totalPos,
+                            negativeCount = totalNeg,
+                            neutralCount = totalNeu,
+                            temperature = mergedTemp,
+                            relationshipScore = mergedRel
+                        )
+                    }
+                }
+                _uiState.update { it.copy(calendarData = merged) }
+            }
         }
     }
 

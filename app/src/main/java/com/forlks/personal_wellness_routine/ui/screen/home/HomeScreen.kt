@@ -490,31 +490,7 @@ fun HomeScreen(
                     }
                 }
 
-                // 5. Kakao quick access
-                item {
-                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilledTonalButton(onClick = onNavigateToKakao, modifier = Modifier.fillMaxWidth()) {
-                            Text(text = "💬 카카오 대화 분석하기")
-                        }
-                        val chatTemp = uiState.latestChatTemp
-                        if (chatTemp != null) {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(text = "🌡", fontSize = 20.sp)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "오늘 대화 ${chatTemp.toInt()}°", style = MaterialTheme.typography.bodyMedium)
-                                }
-                            }
-                        }
-                    }
-                }
+                // 5. Kakao quick access — 하단탭으로 이동됨 (제거)
             }
         }
 

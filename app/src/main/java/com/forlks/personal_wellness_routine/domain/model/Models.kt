@@ -54,6 +54,26 @@ data class ChatAnalysisResult(
     val analyzedAt: Long
 )
 
+/** 날짜별 카카오 대화 분석 결과 */
+data class DailyChatResult(
+    val id: Long = 0,
+    val chatAnalysisId: Long = 0,
+    val date: String,
+    val totalMessages: Int,
+    val positiveCount: Int,
+    val negativeCount: Int,
+    val neutralCount: Int,
+    val temperature: Float,
+    val relationshipScore: Float
+) {
+    val temperatureLevel: TemperatureLevel get() = when {
+        temperature >= 70f -> TemperatureLevel.WARM
+        temperature >= 50f -> TemperatureLevel.NORMAL
+        temperature >= 30f -> TemperatureLevel.COOL
+        else               -> TemperatureLevel.COLD
+    }
+}
+
 // ── Character ─────────────────────────────────────────────────────────────────
 enum class CharacterType(
     val displayName: String,

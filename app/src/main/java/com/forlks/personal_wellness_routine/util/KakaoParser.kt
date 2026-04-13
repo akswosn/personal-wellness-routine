@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.forlks.personal_wellness_routine.domain.model.ChatAnalysisResult
+import com.forlks.personal_wellness_routine.domain.model.DailyChatResult
 import com.forlks.personal_wellness_routine.domain.model.TemperatureLevel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -42,13 +43,7 @@ object KakaoParser {
 
     // 중의어 - 긍정·부정 모두 해석될 수 있어 감정 분석에서 제외
     private val AMBIGUOUS_WORDS = setOf(
-        "같이",    // 중립 - 단순 동행
-        "도움",    // 중립 - 요청·제공 모두 포함
-        "그립",    // 그리움 - 긍정+상실감 혼재
-        "괜찮",    // 상황에 따라 긍정/부정
-        "웃음",    // 기쁨도 비웃음도 포함
-        "보람",    // 좋은 결과 기대이지만 힘든 상황에서도 사용
-        "눈물"     // 기쁨의 눈물, 슬픔의 눈물 모두
+        "같이", "도움", "그립", "괜찮", "웃음", "보람", "눈물"
     )
 
     // 불용어 (키워드 빈도 수집에서만 제외)
@@ -67,6 +62,11 @@ object KakaoParser {
     )
 
     enum class Sentiment { POSITIVE, NEUTRAL, NEGATIVE }
+
+    data class FullParseResult(
+        val chatAnalysis: ChatAnalysisResult,
+        val dailyResults: List<DailyChatResult>
+    )
 
     // ── Public utility ─────────────────────────────────────────────────────────
 
@@ -99,13 +99,148 @@ object KakaoParser {
         else           -> 1
     }
 
-    // ── Main parse ─────────────────────────────────────────────────────────────
+    // ── Legacy single-result parse (backward compat) ──────────────────────────
 
-    suspend fun parseAndAnalyze(context: Context, uri: Uri, fileName: String): ChatAnalysisResult {
-        // URI 스킴에 따라 InputStream 획득
-        // - file://  : 캐시 복사본이므로 File.inputStream() 사용 (권한 불필요)
-        // - content//: ContentResolver 사용 + 영구 권한 시도
-        val lines = try {
+    suspend fun parseAndAnalyze(context: Context, uri: Uri, fileName: String): ChatAnalysisResult =
+        parseAndAnalyzeFull(context, uri, fileName) { _, _ -> }.chatAnalysis
+
+    // ── Full date-based parse with progress callback ───────────────────────────
+
+    /**
+     * 날짜별로 파싱하여 전체 분석 + 일별 분석 모두 반환
+     * @param onProgress (currentDay: Int, totalDays: Int) 진행 콜백
+     */
+    suspend fun parseAndAnalyzeFull(
+        context: Context,
+        uri: Uri,
+        fileName: String,
+        onProgress: suspend (current: Int, total: Int) -> Unit
+    ): FullParseResult {
+        val lines = readLines(context, uri)
+
+        // ── 1단계: 날짜별로 메시지 그룹화 ─────────────────────────────────────
+        val messagesByDate = linkedMapOf<String, MutableList<ParsedMessage>>()
+        var currentDate = ""
+        val keywordFreq = mutableMapOf<String, Int>()
+
+        for (line in lines) {
+            val dateMatch = DATE_PATTERN.matchEntire(line.trim())
+            if (dateMatch != null) {
+                val (year, month, day) = dateMatch.destructured
+                currentDate = "%04d-%02d-%02d".format(year.toInt(), month.toInt(), day.toInt())
+                messagesByDate.getOrPut(currentDate) { mutableListOf() }
+                continue
+            }
+
+            val msgMatch = MESSAGE_PATTERN.matchEntire(line.trim()) ?: continue
+            val content = msgMatch.groupValues[3]
+            if (content.startsWith("사진") || content.startsWith("동영상") ||
+                content.startsWith("이모티콘") || content.startsWith("파일")) continue
+            if (currentDate.isEmpty()) continue
+
+            val sentiment = classifySentiment(content)
+            messagesByDate.getOrPut(currentDate) { mutableListOf() }
+                .add(ParsedMessage(msgMatch.groupValues[1], content, sentiment))
+
+            content.split(" ", "　").forEach { word ->
+                val cleaned = word.replace(Regex("[^가-힣a-zA-Z0-9ㅋㅎㅠㅜ]"), "")
+                if (cleaned.length >= 2 && cleaned !in STOPWORDS) {
+                    keywordFreq[cleaned] = (keywordFreq[cleaned] ?: 0) + 1
+                }
+            }
+        }
+
+        // ── 2단계: 날짜별 분석 + 전체 집계 ───────────────────────────────────
+        val sortedDates = messagesByDate.keys.sorted()
+        val totalDays = sortedDates.size
+        val dailyResults = mutableListOf<DailyChatResult>()
+
+        var totalPos = 0; var totalNeg = 0; var totalNeutral = 0; var totalMsgs = 0
+
+        sortedDates.forEachIndexed { idx, date ->
+            onProgress(idx + 1, totalDays)
+
+            val messages = messagesByDate[date] ?: emptyList()
+            val pos = messages.count { it.sentiment == Sentiment.POSITIVE }
+            val neg = messages.count { it.sentiment == Sentiment.NEGATIVE }
+            val neu = messages.size - pos - neg
+
+            totalPos += pos; totalNeg += neg; totalNeutral += neu
+            totalMsgs += messages.size
+
+            val sentTotal = (pos + neg).coerceAtLeast(1)
+            val dayTemp = (pos.toFloat() / sentTotal.toFloat()) * 100f
+
+            val totalDay = messages.size.coerceAtLeast(1)
+            val relScore = ((pos.toFloat() / totalDay) * 100f +
+                           (neu.toFloat() / totalDay) * 50f -
+                           (neg.toFloat() / totalDay) * 50f).coerceIn(0f, 100f)
+
+            dailyResults.add(DailyChatResult(
+                chatAnalysisId = 0,
+                date = date,
+                totalMessages = messages.size,
+                positiveCount = pos,
+                negativeCount = neg,
+                neutralCount = neu,
+                temperature = dayTemp,
+                relationshipScore = relScore
+            ))
+        }
+
+        // ── 3단계: 전체 집계 → ChatAnalysisResult ─────────────────────────────
+        val grandTotal = totalMsgs.coerceAtLeast(1)
+        val positiveRatio = totalPos.toFloat() / grandTotal
+        val neutralRatio = totalNeutral.toFloat() / grandTotal
+        val negativeRatio = totalNeg.toFloat() / grandTotal
+
+        val sentTotal = (totalPos + totalNeg).coerceAtLeast(1)
+        val temperature = (totalPos.toFloat() / sentTotal.toFloat()) * 100f
+
+        val tempLevel = when {
+            temperature >= 70f -> TemperatureLevel.WARM
+            temperature >= 50f -> TemperatureLevel.NORMAL
+            temperature >= 30f -> TemperatureLevel.COOL
+            else               -> TemperatureLevel.COLD
+        }
+
+        val relationshipScore = (positiveRatio * 100f + neutralRatio * 50f - negativeRatio * 50f)
+            .coerceIn(0f, 100f)
+
+        val topKeywords = keywordFreq.entries.sortedByDescending { it.value }.take(10).map { it.key }
+
+        val periodStart = sortedDates.firstOrNull()
+            ?: LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val periodEnd = sortedDates.lastOrNull()
+            ?: LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+
+        val allMessages = messagesByDate.values.flatten()
+        val draft = buildAutoDiary(allMessages, topKeywords, tempLevel)
+
+        val chatAnalysis = ChatAnalysisResult(
+            fileName = fileName,
+            periodStart = periodStart,
+            periodEnd = periodEnd,
+            totalMessages = grandTotal,
+            positiveRatio = positiveRatio,
+            neutralRatio = neutralRatio,
+            negativeRatio = negativeRatio,
+            temperature = temperature,
+            temperatureLabel = tempLevel.label,
+            temperatureEmoji = tempLevel.emoji,
+            relationshipScore = relationshipScore,
+            topKeywords = topKeywords,
+            autoDiaryDraft = draft,
+            analyzedAt = System.currentTimeMillis()
+        )
+
+        return FullParseResult(chatAnalysis, dailyResults)
+    }
+
+    // ── Private helpers ────────────────────────────────────────────────────────
+
+    private fun readLines(context: Context, uri: Uri): List<String> {
+        return try {
             val inputStream = when (uri.scheme) {
                 "file" -> {
                     val path = uri.path ?: throw SecurityException("파일 경로가 올바르지 않습니다.")
@@ -121,105 +256,15 @@ object KakaoParser {
         } catch (e: SecurityException) {
             throw SecurityException("파일 접근 권한이 없습니다. 파일을 다시 선택해주세요.", e)
         }
-
-        val messages = mutableListOf<ParsedMessage>()
-        var periodStart = ""
-        var periodEnd = ""
-        val keywordFreq = mutableMapOf<String, Int>()
-
-        for (line in lines) {
-            // 날짜 라인 파싱
-            val dateMatch = DATE_PATTERN.matchEntire(line.trim())
-            if (dateMatch != null) {
-                val (year, month, day) = dateMatch.destructured
-                val dateStr = "%04d-%02d-%02d".format(year.toInt(), month.toInt(), day.toInt())
-                if (periodStart.isEmpty()) periodStart = dateStr
-                periodEnd = dateStr
-                continue
-            }
-
-            // 메시지 파싱
-            val msgMatch = MESSAGE_PATTERN.matchEntire(line.trim()) ?: continue
-            val (_, _, content) = msgMatch.destructured
-            if (content.startsWith("사진") || content.startsWith("동영상") ||
-                content.startsWith("이모티콘") || content.startsWith("파일")) continue
-
-            val sentiment = classifySentiment(content)
-            messages.add(ParsedMessage(msgMatch.groupValues[1], content, sentiment))
-
-            // 키워드 빈도 수집 (2글자 이상 단어)
-            content.split(" ", "　").forEach { word ->
-                val cleaned = word.replace(Regex("[^가-힣a-zA-Z0-9ㅋㅎㅠㅜ]"), "")
-                if (cleaned.length >= 2 && cleaned !in STOPWORDS) {
-                    keywordFreq[cleaned] = (keywordFreq[cleaned] ?: 0) + 1
-                }
-            }
-        }
-
-        val total = messages.size.coerceAtLeast(1)
-        val positive = messages.count { it.sentiment == Sentiment.POSITIVE }
-        val negative = messages.count { it.sentiment == Sentiment.NEGATIVE }
-        val neutral = total - positive - negative
-
-        val positiveRatio = positive.toFloat() / total
-        val neutralRatio = neutral.toFloat() / total
-        val negativeRatio = negative.toFloat() / total
-
-        // 새 공식: 긍정 / (긍정 + 부정) * 100  (중립 메시지 제외)
-        val sentimentTotal = (positive + negative).coerceAtLeast(1)
-        val temperature = (positive.toFloat() / sentimentTotal.toFloat()) * 100f
-
-        // 온도 레벨 (새 기준: 70+ warm, 50+ normal, 30+ cool, <30 cold)
-        val tempLevel = when {
-            temperature >= 70f -> TemperatureLevel.WARM
-            temperature >= 50f -> TemperatureLevel.NORMAL
-            temperature >= 30f -> TemperatureLevel.COOL
-            else               -> TemperatureLevel.COLD
-        }
-
-        val relationshipScore = (positiveRatio * 100f + neutralRatio * 50f - negativeRatio * 50f).coerceIn(0f, 100f)
-
-        val topKeywords = keywordFreq.entries
-            .sortedByDescending { it.value }
-            .take(10)
-            .map { it.key }
-
-        val draft = buildAutoDiary(messages, topKeywords, tempLevel)
-
-        return ChatAnalysisResult(
-            fileName = fileName,
-            periodStart = periodStart.ifEmpty {
-                LocalDate.now().minusDays(30).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            },
-            periodEnd = periodEnd.ifEmpty {
-                LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            },
-            totalMessages = total,
-            positiveRatio = positiveRatio,
-            neutralRatio = neutralRatio,
-            negativeRatio = negativeRatio,
-            temperature = temperature,
-            temperatureLabel = tempLevel.label,
-            temperatureEmoji = tempLevel.emoji,
-            relationshipScore = relationshipScore,
-            topKeywords = topKeywords,
-            autoDiaryDraft = draft,
-            analyzedAt = System.currentTimeMillis()
-        )
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
-
-    /** content URI의 영구 읽기 권한 요청 (이미 있거나 실패하면 무시) */
     private fun ensureUriPermission(context: Context, uri: Uri) {
         if (uri.scheme != "content") return
         try {
             context.contentResolver.takePersistableUriPermission(
                 uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-        } catch (_: SecurityException) {
-            // 이미 권한 보유이거나 provider가 persistable 권한을 지원하지 않는 경우 — 무시
-        }
+        } catch (_: SecurityException) { }
     }
 
     private fun classifySentiment(text: String): Sentiment {

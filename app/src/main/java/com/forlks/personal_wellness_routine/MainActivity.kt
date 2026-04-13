@@ -38,8 +38,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val startDestination = runBlocking {
-            if (prefs.isOnboardingDone.first()) Screen.Home.route
-            else Screen.Onboarding.route
+            when {
+                prefs.isOnboardingDone.first() -> Screen.Home.route
+                prefs.isLoginChoiceDone.first() -> Screen.Onboarding.route
+                else -> Screen.LoginChoice.route  // 최초 설치 시 로그인 선택 화면
+            }
         }
 
         setContent {

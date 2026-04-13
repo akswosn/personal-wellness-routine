@@ -1,6 +1,9 @@
 package com.forlks.personal_wellness_routine.ui.navigation
 
 sealed class Screen(val route: String) {
+    // 최초 진입 선택
+    object LoginChoice : Screen("login_choice")
+
     // Onboarding
     object Onboarding : Screen("onboarding")
     object CharacterSelect : Screen("character_select")
@@ -27,6 +30,7 @@ sealed class Screen(val route: String) {
 
     // KakaoTalk analysis
     object KakaoImport : Screen("kakao_import")
+    object KakaoCalendar : Screen("kakao_calendar")
     object KakaoAnalyzing : Screen("kakao_analyzing/{fileUri}") {
         fun createRoute(fileUri: String) = "kakao_analyzing/${java.net.URLEncoder.encode(fileUri, "UTF-8")}"
     }

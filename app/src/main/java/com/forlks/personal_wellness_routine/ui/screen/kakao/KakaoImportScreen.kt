@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -49,6 +50,7 @@ import java.util.Locale
 fun KakaoImportScreen(
     onBack: () -> Unit,
     onFileSelected: (String) -> Unit,
+    onCalendar: () -> Unit = {},
     viewModel: KakaoViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -100,6 +102,14 @@ fun KakaoImportScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "뒤로가기"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onCalendar) {
+                        Icon(
+                            imageVector = Icons.Filled.CalendarMonth,
+                            contentDescription = "분석 캘린더"
                         )
                     }
                 }

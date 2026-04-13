@@ -30,6 +30,7 @@ object DatabaseModule {
     @Provides fun provideWellnessPointDao(db: AppDatabase): WellnessPointDao = db.wellnessPointDao()
     @Provides fun provideAnalysisSummaryDao(db: AppDatabase): AnalysisSummaryDao = db.analysisSummaryDao()
     @Provides fun provideDailyHealthScoreDao(db: AppDatabase): DailyHealthScoreDao = db.dailyHealthScoreDao()
+    @Provides fun provideDailyChatAnalysisDao(db: AppDatabase): DailyChatAnalysisDao = db.dailyChatAnalysisDao()
 
     @Provides
     @Singleton

@@ -15,9 +15,10 @@ import com.forlks.personal_wellness_routine.data.db.entity.DailyHealthScoreEntit
         ChatAnalysisEntity::class,
         WellnessPointHistoryEntity::class,
         AnalysisSummaryEntity::class,
-        DailyHealthScoreEntity::class
+        DailyHealthScoreEntity::class,
+        DailyChatAnalysisEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,4 +28,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun wellnessPointDao(): WellnessPointDao
     abstract fun analysisSummaryDao(): AnalysisSummaryDao
     abstract fun dailyHealthScoreDao(): DailyHealthScoreDao
+    abstract fun dailyChatAnalysisDao(): DailyChatAnalysisDao
 }
