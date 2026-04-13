@@ -105,7 +105,7 @@ fun nextLevelWp(totalWp: Int): Int = when {
 
 // ── Wellness Points ───────────────────────────────────────────────────────────
 object WpEvent {
-    const val ATTENDANCE = "ATTENDANCE"        // +5
+    const val ATTENDANCE = "ATTENDANCE"        // +10 (기분/일기/루틴/카톡 중 하루 최초 행동 시 자동 적립)
     const val STREAK_7 = "STREAK_7"            // +10
     const val STREAK_30 = "STREAK_30"          // +30
     const val ROUTINE = "ROUTINE"              // +2 per routine (max +20/day)
@@ -113,7 +113,7 @@ object WpEvent {
     const val CHAT_ANALYSIS = "CHAT_ANALYSIS"  // +5
 
     fun points(event: String): Int = when (event) {
-        ATTENDANCE -> 5
+        ATTENDANCE -> 10
         STREAK_7 -> 10
         STREAK_30 -> 30
         ROUTINE -> 2

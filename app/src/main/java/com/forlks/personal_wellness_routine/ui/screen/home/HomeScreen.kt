@@ -457,11 +457,13 @@ fun HomeScreen(
                                                 maxLines = 1,
                                                 textAlign = TextAlign.Center
                                             )
-                                            Text(
-                                                text = routine.scheduledTime,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                            if (routine.scheduledTime.isNotBlank()) {
+                                                Text(
+                                                    text = routine.scheduledTime,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                             Checkbox(
                                                 checked = routine.isCompletedToday,
                                                 onCheckedChange = {

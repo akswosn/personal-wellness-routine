@@ -26,12 +26,9 @@ fun RoutineCreateScreen(
     onBack: () -> Unit,
     viewModel: RoutineViewModel = hiltViewModel()
 ) {
-    // Form state
     var name by remember { mutableStateOf("") }
     var selectedEmoji by remember { mutableStateOf("💪") }
     var selectedCategory by remember { mutableStateOf(RoutineCategory.HEALTH) }
-    var scheduledTime by remember { mutableStateOf("") }
-    var isAllDay by remember { mutableStateOf(false) }
     var durationMinutes by remember { mutableFloatStateOf(20f) }
 
     val emojiList = listOf(
@@ -40,27 +37,15 @@ fun RoutineCreateScreen(
         "🏋️", "🚴", "🤸", "🧗"
     )
 
-    val categories = listOf(
-        RoutineCategory.HEALTH,
-        RoutineCategory.MIND,
-        RoutineCategory.STUDY
-    )
+    val categories = listOf(RoutineCategory.HEALTH, RoutineCategory.MIND, RoutineCategory.STUDY)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = "루틴 만들기",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("루틴 만들기", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "뒤로가기"
-                        )
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "뒤로가기")
                     }
                 }
             )
@@ -76,11 +61,7 @@ fun RoutineCreateScreen(
         ) {
             // 1. Name input
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "루틴 이름",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("루틴 이름", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -93,11 +74,7 @@ fun RoutineCreateScreen(
 
             // 2. Emoji picker
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "이모지 선택",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("이모지 선택", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -109,19 +86,13 @@ fun RoutineCreateScreen(
                             modifier = Modifier
                                 .size(44.dp)
                                 .then(
-                                    if (isSelected) Modifier.border(
-                                        2.dp,
-                                        WellGreen,
-                                        RoundedCornerShape(10.dp)
-                                    )
+                                    if (isSelected) Modifier.border(2.dp, WellGreen, RoundedCornerShape(10.dp))
                                     else Modifier
                                 )
                                 .clickable { selectedEmoji = emoji },
                             shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected)
-                                WellGreen.copy(alpha = 0.15f)
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant,
+                            color = if (isSelected) WellGreen.copy(alpha = 0.15f)
+                                    else MaterialTheme.colorScheme.surfaceVariant,
                             tonalElevation = if (isSelected) 0.dp else 1.dp
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -134,11 +105,7 @@ fun RoutineCreateScreen(
 
             // 3. Category chips
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "카테고리",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("카테고리", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     categories.forEach { category ->
                         FilterChip(
@@ -154,56 +121,20 @@ fun RoutineCreateScreen(
                 }
             }
 
-            // 4. Time input
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "시작 시간",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = if (isAllDay) "하루종일" else scheduledTime,
-                        onValueChange = {
-                            if (!isAllDay) scheduledTime = it
-                        },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("HH:mm") },
-                        singleLine = true,
-                        enabled = !isAllDay,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = isAllDay,
-                            onCheckedChange = { isAllDay = it },
-                            colors = CheckboxDefaults.colors(checkedColor = WellGreen)
-                        )
-                        Text(
-                            text = "하루종일",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-
-            // 5. Duration slider
+            // 4. Duration slider
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "소요 시간",
+                        "소요 시간",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "${durationMinutes.toInt()}분",
+                        "${durationMinutes.toInt()}분",
                         style = MaterialTheme.typography.bodyMedium,
                         color = WellGreen,
                         fontWeight = FontWeight.Bold
@@ -215,57 +146,38 @@ fun RoutineCreateScreen(
                     valueRange = 5f..60f,
                     steps = 10,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = WellGreen,
-                        activeTrackColor = WellGreen
-                    )
+                    colors = SliderDefaults.colors(thumbColor = WellGreen, activeTrackColor = WellGreen)
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "5분",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "60분",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("5분", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("60분", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 6. Save button
+            // 5. Save button
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        val routine = Routine(
-                            name = name.trim(),
-                            category = selectedCategory,
-                            emoji = selectedEmoji,
-                            scheduledTime = if (isAllDay) "하루종일" else scheduledTime.trim(),
-                            durationMinutes = durationMinutes.toInt()
+                        viewModel.addRoutine(
+                            Routine(
+                                name = name.trim(),
+                                category = selectedCategory,
+                                emoji = selectedEmoji,
+                                scheduledTime = "",
+                                durationMinutes = durationMinutes.toInt()
+                            )
                         )
-                        viewModel.addRoutine(routine)
                         onBack()
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = WellGreen),
                 enabled = name.isNotBlank()
             ) {
-                Text(
-                    text = "저장하기",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("저장하기", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

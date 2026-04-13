@@ -71,6 +71,8 @@ class RoutineViewModel @Inject constructor(
         viewModelScope.launch {
             routineRepository.toggleComplete(routineId, today, isCompleted)
             if (isCompleted) {
+                // 출석 WP 자동 적립 (하루 최초 1회)
+                wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
                 wellnessPointRepository.earnPoints(
                     eventType = WpEvent.ROUTINE,
                     description = "루틴 완료"

@@ -60,11 +60,13 @@ fun KakaoImportScreen(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let {
-            // 영구 읽기 권한 취득 (Navigation 전환 이후에도 유효)
-            context.contentResolver.takePersistableUriPermission(
-                it,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
+            // 영구 읽기 권한 취득 — 일부 기기에서 SecurityException 발생 가능 → 무시
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: SecurityException) { /* provider 가 persistable 권한을 지원하지 않음 */ }
             onFileSelected(it.toString())
         }
     }
@@ -139,7 +141,7 @@ fun KakaoImportScreen(
             // File picker button
             item {
                 Button(
-                    onClick = { launcher.launch(arrayOf("text/plain", "text/*")) },
+                    onClick = { launcher.launch(arrayOf("text/plain", "text/*", "*/*")) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(

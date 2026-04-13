@@ -141,6 +141,8 @@ class HomeViewModel @Inject constructor(
             // 기분 체크인 → moodScore 업데이트
             val moodScore = DailyHealthCalculator.moodEmojiToScore(emoji)
             dailyHealthRepository.updateToday(moodScore = moodScore)
+            // 출석 WP 자동 적립 (하루 최초 1회)
+            wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
         }
     }
 

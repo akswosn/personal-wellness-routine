@@ -77,6 +77,8 @@ class DiaryViewModel @Inject constructor(
 
             // 50자 이상일 때만 WP 적립 + 분석 스냅샷 저장
             if (entry.content.length >= 50) {
+                // 출석 WP 자동 적립 (하루 최초 1회)
+                wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
                 wellnessPointRepository.earnPoints(
                     eventType = WpEvent.DIARY,
                     description = "일기 작성 (+3 WP)"
