@@ -6,21 +6,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.forlks.personal_wellness_routine.ui.theme.WellGreen
 
 @Composable
 fun LoginChoiceScreen(
     onGoogleLogin: () -> Unit,
-    onSkip: () -> Unit
+    onSkip: () -> Unit,
+    viewModel: LoginChoiceViewModel = hiltViewModel()
 ) {
-    var showSkipDialog by remember { mutableStateOf(false) }
-    var showGoogleStubDialog by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // 그냥 시작 안내 다이얼로그
+    var showSkipDialog by remember { mutableStateOf(false) }
+
+    // 그냥 시작 확인 다이얼로그
     if (showSkipDialog) {
         AlertDialog(
             onDismissRequest = { showSkipDialog = false },
@@ -37,7 +42,7 @@ fun LoginChoiceScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showSkipDialog = false
-                    onSkip()
+                    viewModel.skipLogin(onSkip)
                 }) {
                     Text("그냥 시작하기", color = MaterialTheme.colorScheme.error)
                 }
@@ -50,24 +55,14 @@ fun LoginChoiceScreen(
         )
     }
 
-    // 구글 로그인 준비중 안내 (stub)
-    if (showGoogleStubDialog) {
+    // 오류 다이얼로그
+    uiState.errorMessage?.let { message ->
         AlertDialog(
-            onDismissRequest = { showGoogleStubDialog = false },
-            title = { Text("구글 로그인") },
-            text = {
-                Text(
-                    text = "구글 로그인 기능은 현재 준비 중입니다.\n로그인 없이 시작 후 설정에서 연동할 수 있습니다.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("로그인 오류") },
+            text = { Text(text = message, style = MaterialTheme.typography.bodyMedium) },
             confirmButton = {
-                TextButton(onClick = {
-                    showGoogleStubDialog = false
-                    onSkip()  // 준비중이므로 skip과 동일하게 진행
-                }) {
-                    Text("확인")
-                }
+                TextButton(onClick = { viewModel.clearError() }) { Text("확인") }
             }
         )
     }
@@ -100,18 +95,39 @@ fun LoginChoiceScreen(
 
         // 구글 로그인 버튼
         Button(
-            onClick = { showGoogleStubDialog = true },
+            onClick = {
+                viewModel.signInWithGoogle(
+                    activityContext = context,
+                    onSuccess = onGoogleLogin,
+                    onCancelled = { /* 취소 시 아무 동작 없음 */ }
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = WellGreen)
+            colors = ButtonDefaults.buttonColors(containerColor = WellGreen),
+            enabled = !uiState.isLoading
         ) {
-            Text(
-                text = "🔑  구글로 로그인",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "로그인 중...",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            } else {
+                Text(
+                    text = "🔑  구글로 로그인",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -122,7 +138,8 @@ fun LoginChoiceScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            enabled = !uiState.isLoading
         ) {
             Text(
                 text = "로그인 없이 시작",

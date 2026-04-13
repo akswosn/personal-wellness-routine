@@ -28,6 +28,9 @@ lottie = "6.6.6"
 datastore = "1.1.4"
 # Gson
 gson = "2.11.0"
+# Credential Manager (Google Sign-In)
+credentialsManager = "1.3.0"
+googleId = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,6 +75,10 @@ lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", versio
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 # Gson
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+# Credential Manager
+credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentialsManager" }
+credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsManager" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleId" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

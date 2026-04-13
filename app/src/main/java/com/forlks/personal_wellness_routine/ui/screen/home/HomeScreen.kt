@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.forlks.personal_wellness_routine.ui.component.AD_BANNER_HEIGHT
 import com.forlks.personal_wellness_routine.ui.component.AdBannerView
 import com.forlks.personal_wellness_routine.ui.component.BottomNavBar
@@ -51,6 +54,18 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val routineUiState by routineViewModel.uiState.collectAsState()
     val isDark = isSystemInDarkTheme()
+
+    // 앱이 포그라운드로 돌아올 때 stats 갱신 (자정 이후 날짜 변경 반영)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refresh()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd (E)", Locale.KOREAN)

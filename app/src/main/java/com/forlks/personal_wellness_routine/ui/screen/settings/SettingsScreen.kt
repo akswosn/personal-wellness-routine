@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,11 +27,14 @@ fun SettingsScreen(
     onNavigateToCharacter: () -> Unit,
     onNavigateToGoogleLogin: () -> Unit = {},
     onboardingViewModel: OnboardingViewModel = hiltViewModel(),
-    characterViewModel: CharacterViewModel = hiltViewModel()
+    characterViewModel: CharacterViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val onboardingState by onboardingViewModel.uiState.collectAsState()
     val characterUiState by characterViewModel.uiState.collectAsState()
     val characterState = characterUiState.characterState
+    val settingsState by settingsViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     // 이름 상태
     var userName by remember { mutableStateOf("") }
@@ -39,10 +43,6 @@ fun SettingsScreen(
             userName = onboardingState.userName
         }
     }
-
-    // 구글 로그인 stub 상태 (DataStore 직접 접근 대신 로컬 상태)
-    var isGoogleLoggedIn by remember { mutableStateOf(false) }
-    var googleEmail by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -140,13 +140,20 @@ fun SettingsScreen(
                     headlineContent = { Text("구글 계정") },
                     supportingContent = {
                         Text(
-                            text = if (isGoogleLoggedIn) googleEmail else "로그인되지 않음",
+                            text = if (settingsState.isGoogleLoggedIn)
+                                settingsState.googleEmail
+                            else
+                                "로그인되지 않음",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     trailingContent = {
-                        if (isGoogleLoggedIn) {
-                            TextButton(onClick = { isGoogleLoggedIn = false; googleEmail = "" }) {
+                        if (settingsState.isGoogleLoggedIn) {
+                            TextButton(
+                                onClick = {
+                                    settingsViewModel.signOut(context)
+                                }
+                            ) {
                                 Text("로그아웃", color = MaterialTheme.colorScheme.error)
                             }
                         } else {
@@ -165,12 +172,12 @@ fun SettingsScreen(
                     trailingContent = {
                         IconButton(
                             onClick = { /* TODO: Drive export */ },
-                            enabled = isGoogleLoggedIn
+                            enabled = settingsState.isGoogleLoggedIn
                         ) {
                             Icon(
                                 Icons.Filled.CloudUpload,
                                 contentDescription = "내보내기",
-                                tint = if (isGoogleLoggedIn)
+                                tint = if (settingsState.isGoogleLoggedIn)
                                     MaterialTheme.colorScheme.primary
                                 else
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -187,12 +194,12 @@ fun SettingsScreen(
                     trailingContent = {
                         IconButton(
                             onClick = { /* TODO: Drive import */ },
-                            enabled = isGoogleLoggedIn
+                            enabled = settingsState.isGoogleLoggedIn
                         ) {
                             Icon(
                                 Icons.Filled.CloudDownload,
                                 contentDescription = "가져오기",
-                                tint = if (isGoogleLoggedIn)
+                                tint = if (settingsState.isGoogleLoggedIn)
                                     MaterialTheme.colorScheme.primary
                                 else
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -203,7 +210,7 @@ fun SettingsScreen(
             }
 
             // 로그인 안내 문구
-            if (!isGoogleLoggedIn) {
+            if (!settingsState.isGoogleLoggedIn) {
                 item {
                     Text(
                         text = "구글 로그인 후 내보내기/가져오기를 사용할 수 있습니다",
