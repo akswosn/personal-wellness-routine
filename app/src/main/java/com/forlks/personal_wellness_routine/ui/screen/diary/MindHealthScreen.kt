@@ -1,30 +1,29 @@
 package com.forlks.personal_wellness_routine.ui.screen.diary
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.forlks.personal_wellness_routine.ui.theme.WellGreen
-
-private val SkyBlue   = Color(0xFF29B6F6)
-private val SoftGold  = Color(0xFFFFC107)
-private val SoftRed   = Color(0xFFEF9A9A)
-private val SoftGray  = Color(0xFFBDBDBD)
+import com.forlks.personal_wellness_routine.util.MindHealthCalculator
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +32,7 @@ fun MindHealthScreen(
     viewModel: MindHealthViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
     Scaffold(
         topBar = {
@@ -47,8 +47,8 @@ fun MindHealthScreen(
         }
     ) { padding ->
         if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = WellGreen)
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = mindHealthColor(state.score))
             }
             return@Scaffold
         }
@@ -61,91 +61,115 @@ fun MindHealthScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // Hero 점수 카드
+            // ── 월간 요약 카드 ──────────────────────────────────────────────────
             item {
-                MindHealthHeroCard(
+                MindHealthSummaryCard(
+                    ym = state.displayYearMonth,
                     score = state.score,
                     level = state.level,
-                    levelEmoji = state.levelEmoji
+                    levelEmoji = state.levelEmoji,
+                    insight = state.insight
                 )
             }
 
-            // 인사이트 카드
+            // ── 월 네비게이터 ────────────────────────────────────────────────────
             item {
-                Card(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = WellGreen.copy(alpha = 0.08f)
-                    )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("💡", fontSize = 18.sp)
+                    IconButton(onClick = { viewModel.prevMonth() }) {
+                        Icon(Icons.Filled.ChevronLeft, contentDescription = "이전 달")
+                    }
+                    Text(
+                        text = "${state.displayYearMonth.year}년 ${state.displayYearMonth.monthValue}월",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = { viewModel.nextMonth() }) {
+                        Icon(Icons.Filled.ChevronRight, contentDescription = "다음 달")
+                    }
+                }
+            }
+
+            // ── 요일 헤더 ──────────────────────────────────────────────────────
+            item {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf("일", "월", "화", "수", "목", "금", "토").forEach { day ->
                         Text(
-                            text = state.insight,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = day,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
             }
 
-            // 4주 추이 차트
-            if (state.weeklyTrend.isNotEmpty() && state.weeklyTrend.any { it.second > 0 }) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                "4주 마음 건강도 추이",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            MindHealthBarChart(bars = state.weeklyTrend)
-                        }
-                    }
-                }
-            }
+            // ── 달력 그리드 ────────────────────────────────────────────────────
+            item {
+                val ym = state.displayYearMonth
+                val firstDay = ym.atDay(1)
+                val startOffset = firstDay.dayOfWeek.value % 7
+                val daysInMonth = ym.lengthOfMonth()
+                val rows = (startOffset + daysInMonth + 6) / 7
 
-            // 감정 분포
-            if (state.emotionDistribution.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                "감정 분포",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            state.emotionDistribution.forEach { (label, ratio) ->
-                                EmotionDistRow(label = label, ratio = ratio)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for (row in 0 until rows) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            for (col in 0 until 7) {
+                                val day = row * 7 + col - startOffset + 1
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                ) {
+                                    if (day in 1..daysInMonth) {
+                                        val date = ym.atDay(day)
+                                        val dateStr = date.format(dateFmt)
+                                        val score = state.calendarData[dateStr]
+                                        val isSelected = state.selectedDate == dateStr
+                                        val isToday = date == LocalDate.now()
+                                        val isFuture = date.isAfter(LocalDate.now())
+
+                                        MindHealthDayCell(
+                                            day = day,
+                                            score = score,
+                                            isSelected = isSelected,
+                                            isToday = isToday,
+                                            isFuture = isFuture,
+                                            onClick = {
+                                                if (!isFuture) viewModel.selectDate(dateStr)
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // 전문가 상담 배너
+            // ── 선택 날짜 상세 ────────────────────────────────────────────────
+            if (state.selectedDate != null) {
+                item {
+                    MindHealthDayDetail(
+                        date = state.selectedDate!!,
+                        score = state.selectedDayScore,
+                        emoji = state.selectedDayEmoji
+                    )
+                }
+            }
+
+            // ── 전문가 상담 배너 ────────────────────────────────────────────────
             if (state.showCounselingBanner) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = SkyBlue.copy(alpha = 0.1f))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF29B6F6).copy(alpha = 0.1f))
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -154,7 +178,7 @@ fun MindHealthScreen(
                             Text(
                                 "💙 마음이 많이 힘드신가요?",
                                 fontWeight = FontWeight.Bold,
-                                color = SkyBlue
+                                color = Color(0xFF29B6F6)
                             )
                             Text(
                                 "전문 상담사와 이야기 나눠보는 것도 좋은 방법이에요. 혼자 힘들어하지 않아도 괜찮아요.",
@@ -166,14 +190,48 @@ fun MindHealthScreen(
                 }
             }
 
-            // 데이터 부족 안내
+            // ── 범례 ──────────────────────────────────────────────────────────
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        listOf(
+                            Triple(Color(0xFFFFC107), "80~", "매우좋음"),
+                            Triple(Color(0xFF4CAF50), "60~79", "좋음"),
+                            Triple(Color(0xFF42A5F5), "40~59", "보통"),
+                            Triple(Color(0xFFFF9800), "20~39", "주의")
+                        ).forEach { (color, range, label) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                                Column {
+                                    Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                    Text(range, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 데이터 부족 안내 ────────────────────────────────────────────────
             if (state.score < 0) {
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier
@@ -182,9 +240,9 @@ fun MindHealthScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("📓", fontSize = 40.sp)
+                            Text("📓", fontSize = 36.sp)
                             Text(
-                                "50자 이상 일기를 5개 이상 작성하면\n마음 건강도를 분석할 수 있어요",
+                                "50자 이상 일기를 작성하면\n마음 건강도를 분석할 수 있어요",
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -193,84 +251,67 @@ fun MindHealthScreen(
                     }
                 }
             }
+
+            item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
 }
 
 @Composable
-private fun MindHealthHeroCard(score: Int, level: String, levelEmoji: String) {
-    val displayScore = if (score < 0) "-" else "$score%"
-    val levelColor = when {
-        score >= 80 -> Color(0xFFFFC107)
-        score >= 60 -> WellGreen
-        score >= 40 -> Color(0xFF42A5F5)
-        score >= 20 -> Color(0xFFFF9800)
-        score >= 0  -> Color(0xFFEF5350)
-        else        -> Color(0xFFBDBDBD)
-    }
+private fun MindHealthSummaryCard(
+    ym: java.time.YearMonth,
+    score: Int,
+    level: String,
+    levelEmoji: String,
+    insight: String
+) {
+    val color = mindHealthColor(score)
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = levelColor.copy(alpha = 0.1f))
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("이번 달 마음 건강도", style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(displayScore, fontSize = 56.sp, fontWeight = FontWeight.ExtraBold, color = levelColor)
+            Text(
+                "${ym.monthValue}월 마음 건강도",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(levelEmoji, fontSize = 22.sp)
-                Text(level, style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold, color = levelColor)
-            }
-        }
-    }
-}
-
-@Composable
-private fun MindHealthBarChart(bars: List<Pair<String, Int>>) {
-    Column {
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-        ) {
-            val w = size.width
-            val h = size.height - 24.dp.toPx()
-            val count = bars.size
-            val slotW = w / count
-            val barW = slotW * 0.55f
-            bars.forEachIndexed { i, (_, score) ->
-                val barH = (score.coerceAtLeast(0).toFloat() / 100f) * h
-                val x = i * slotW + slotW * 0.225f
-                drawRect(
-                    color = WellGreen.copy(alpha = 0.85f),
-                    topLeft = Offset(x, h - barH),
-                    size = Size(barW, barH)
+                Text(
+                    text = if (score >= 0) "${score}%" else "-",
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = color
                 )
-            }
-        }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            bars.forEach { (label, score) ->
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(if (score > 0) "$score%" else "-",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = WellGreen)
-                    Text(label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(levelEmoji, fontSize = 20.sp)
+                        Text(
+                            level,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
+                    }
+                    if (insight.isNotBlank()) {
+                        Text(
+                            insight,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -278,27 +319,113 @@ private fun MindHealthBarChart(bars: List<Pair<String, Int>>) {
 }
 
 @Composable
-private fun EmotionDistRow(label: String, ratio: Float) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(72.dp))
-        LinearProgressIndicator(
-            progress = { ratio.coerceIn(0f, 1f) },
-            modifier = Modifier
-                .weight(1f)
-                .height(8.dp),
-            color = WellGreen,
-            trackColor = WellGreen.copy(alpha = 0.12f)
-        )
-        Text(
-            "${(ratio * 100).toInt()}%",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(32.dp),
-            textAlign = TextAlign.End
-        )
+private fun MindHealthDayCell(
+    day: Int,
+    score: Int?,
+    isSelected: Boolean,
+    isToday: Boolean,
+    isFuture: Boolean,
+    onClick: () -> Unit
+) {
+    val cellColor = mindHealthColor(score ?: -1)
+    val bgColor = when {
+        isSelected          -> MaterialTheme.colorScheme.primary
+        score != null && score >= 0 && !isFuture -> cellColor.copy(alpha = 0.75f)
+        else                -> Color.Transparent
     }
+    val textColor = when {
+        isSelected          -> MaterialTheme.colorScheme.onPrimary
+        score != null && score >= 0 && !isFuture -> Color.White
+        isToday             -> MaterialTheme.colorScheme.primary
+        isFuture            -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        else                -> MaterialTheme.colorScheme.onSurface
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(2.dp)
+            .fillMaxSize()
+            .clip(CircleShape)
+            .background(bgColor)
+            .clickable(enabled = !isFuture, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = day.toString(),
+                fontSize = 12.sp,
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = textColor
+            )
+            if (score != null && score >= 0 && !isFuture && !isSelected) {
+                Text(
+                    text = MindHealthCalculator.levelEmoji(score),
+                    fontSize = 7.sp,
+                    lineHeight = 8.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MindHealthDayDetail(date: String, score: Int, emoji: String) {
+    val localDate = runCatching { LocalDate.parse(date) }.getOrNull()
+    val displayDate = localDate?.format(DateTimeFormatter.ofPattern("M월 d일 (E)")) ?: date
+    val color = mindHealthColor(score)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(displayDate, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            if (score >= 0) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(text = emoji, fontSize = 32.sp)
+                    Column {
+                        Text(
+                            text = "${score}%",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = color
+                        )
+                        Text(
+                            MindHealthCalculator.level(score),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = color
+                        )
+                    }
+                }
+                LinearProgressIndicator(
+                    progress = { (score / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = color,
+                    trackColor = color.copy(alpha = 0.2f)
+                )
+            } else {
+                Text(
+                    "이 날은 일기 기록이 없어요",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+internal fun mindHealthColor(score: Int): Color = when {
+    score >= 80 -> Color(0xFFFFC107)
+    score >= 60 -> Color(0xFF4CAF50)
+    score >= 40 -> Color(0xFF42A5F5)
+    score >= 20 -> Color(0xFFFF9800)
+    score >= 0  -> Color(0xFFEF5350)
+    else        -> Color(0xFFBDBDBD)
 }

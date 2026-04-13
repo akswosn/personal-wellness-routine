@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ fun RoutineListScreen(
     onCreateRoutine: () -> Unit,
     onEditRoutine: (Long) -> Unit,
     onNavigate: (String) -> Unit,
+    onNavigateToAchievement: () -> Unit = {},
     viewModel: RoutineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -80,6 +82,14 @@ fun RoutineListScreen(
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "뒤로가기"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToAchievement) {
+                        Icon(
+                            imageVector = Icons.Filled.BarChart,
+                            contentDescription = "달성도 분석"
                         )
                     }
                 }

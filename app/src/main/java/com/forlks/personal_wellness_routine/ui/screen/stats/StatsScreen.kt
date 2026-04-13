@@ -361,21 +361,29 @@ fun StatsScreen(
                     item {
                         Text("📊 상세 분석", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Card(modifier = Modifier.weight(1f).clickable { onNavigate(Screen.RoutineAchievement.route) },
                                 colors = CardDefaults.cardColors(containerColor = WellGreen.copy(alpha = 0.1f))) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("📈", fontSize = 28.sp)
-                                    Text("루틴 달성도", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = WellGreen)
-                                    Text("일간·주간·월간\n등급 분석", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                                Column(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("📈", fontSize = 24.sp)
+                                    Text("루틴 달성도", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = WellGreen)
+                                    Text("달력으로 보기", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                 }
                             }
                             Card(modifier = Modifier.weight(1f).clickable { onNavigate(Screen.MindHealth.route) },
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF29B6F6).copy(alpha = 0.1f))) {
-                                Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("💙", fontSize = 28.sp)
-                                    Text("마음 건강도", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color(0xFF29B6F6))
-                                    Text("일기 감정 분포\n4주 추이 분석", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                                Column(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("💙", fontSize = 24.sp)
+                                    Text("마음 건강도", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFF29B6F6))
+                                    Text("달력으로 보기", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                                }
+                            }
+                            Card(modifier = Modifier.weight(1f).clickable { onNavigate(Screen.KakaoCalendar.route) },
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFF8C69).copy(alpha = 0.1f))) {
+                                Column(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("💬", fontSize = 24.sp)
+                                    Text("대화 분석", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFF8C69))
+                                    Text("달력으로 보기", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                 }
                             }
                         }

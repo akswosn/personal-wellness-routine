@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.forlks.personal_wellness_routine.domain.model.DailyChatResult
 import com.forlks.personal_wellness_routine.domain.model.TemperatureLevel
+import com.forlks.personal_wellness_routine.ui.component.BottomNavBar
+import com.forlks.personal_wellness_routine.ui.navigation.Screen
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -31,6 +33,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun KakaoCalendarScreen(
     onBack: () -> Unit,
+    onNavigate: (String) -> Unit = {},
     viewModel: KakaoViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -51,6 +54,12 @@ fun KakaoCalendarScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로가기")
                     }
                 }
+            )
+        },
+        bottomBar = {
+            BottomNavBar(
+                currentRoute = Screen.KakaoImport.route,
+                onNavigate = onNavigate
             )
         }
     ) { paddingValues ->

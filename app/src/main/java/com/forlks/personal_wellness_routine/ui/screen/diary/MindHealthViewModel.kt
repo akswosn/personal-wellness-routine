@@ -2,7 +2,6 @@ package com.forlks.personal_wellness_routine.ui.screen.diary
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.forlks.personal_wellness_routine.data.db.entity.AnalysisSummaryEntity
 import com.forlks.personal_wellness_routine.data.repository.AnalysisRepository
 import com.forlks.personal_wellness_routine.util.MindHealthCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,17 +11,23 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 data class MindHealthUiState(
-    val score: Int = -1,                            // -1 = 데이터 부족
+    // 캘린더
+    val displayYearMonth: YearMonth = YearMonth.now(),
+    val calendarData: Map<String, Int> = emptyMap(),  // date → mindHealthScore (0-100, -1=없음)
+    val selectedDate: String? = null,
+    val selectedDayScore: Int = -1,
+    val selectedDayEmoji: String = "",
+    // 월간 요약
+    val score: Int = -1,
     val level: String = "분석중",
     val levelEmoji: String = "🔍",
     val insight: String = "",
     val showCounselingBanner: Boolean = false,
-    val weeklyTrend: List<Pair<String, Int>> = emptyList(), // 4주차 추이
-    val emotionDistribution: List<Pair<String, Float>> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -36,68 +41,62 @@ class MindHealthViewModel @Inject constructor(
 
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-    init { loadData() }
+    init { loadMonth(YearMonth.now()) }
 
-    fun loadData() {
+    fun prevMonth() {
+        val ym = _uiState.value.displayYearMonth.minusMonths(1)
+        _uiState.update { it.copy(displayYearMonth = ym, selectedDate = null) }
+        loadMonth(ym)
+    }
+
+    fun nextMonth() {
+        val ym = _uiState.value.displayYearMonth.plusMonths(1)
+        if (ym <= YearMonth.now()) {
+            _uiState.update { it.copy(displayYearMonth = ym, selectedDate = null) }
+            loadMonth(ym)
+        }
+    }
+
+    fun selectDate(date: String) {
+        val current = _uiState.value
+        if (current.selectedDate == date) {
+            _uiState.update { it.copy(selectedDate = null, selectedDayScore = -1, selectedDayEmoji = "") }
+        } else {
+            val score = current.calendarData[date] ?: -1
+            val emoji = if (score >= 0) MindHealthCalculator.levelEmoji(score) else ""
+            _uiState.update { it.copy(selectedDate = date, selectedDayScore = score, selectedDayEmoji = emoji) }
+        }
+    }
+
+    fun loadData() = loadMonth(_uiState.value.displayYearMonth)
+
+    private fun loadMonth(ym: YearMonth) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
-            // v0.0.2: 단어 기반 마음건강도 계산
-            // mindHealthScore 컬럼에 이미 단어 기반 점수가 저장되어 있음
-            val last30Temp = analysisRepository.getLast30Days()
-            val validScores = last30Temp.filter { it.mindHealthScore >= 0 }
-            val score = if (validScores.isEmpty()) -1
-                        else validScores.map { it.mindHealthScore }.average().toInt().coerceIn(0, 100)
+            val data = analysisRepository.getByYearMonth(ym.year, ym.monthValue)
 
-            val last30 = last30Temp
-            val weeklyTrend = buildWeeklyTrend(last30)
-            val emotionDist = buildEmotionDistribution(last30)
+            // 날짜별 마음건강도 맵
+            val calendarMap = data
+                .filter { it.diaryCharCount >= 50 }
+                .associate { it.date to it.mindHealthScore }
+
+            // 월 평균 점수
+            val validScores = calendarMap.values.filter { it >= 0 }
+            val avgScore = if (validScores.isEmpty()) -1
+                           else validScores.average().toInt().coerceIn(0, 100)
 
             _uiState.update {
                 it.copy(
-                    score = score,
-                    level = MindHealthCalculator.level(score),
-                    levelEmoji = MindHealthCalculator.levelEmoji(score),
-                    insight = MindHealthCalculator.insight(score),
-                    showCounselingBanner = MindHealthCalculator.shouldShowCounselingBanner(score),
-                    weeklyTrend = weeklyTrend,
-                    emotionDistribution = emotionDist,
+                    calendarData = calendarMap,
+                    score = avgScore,
+                    level = MindHealthCalculator.level(avgScore),
+                    levelEmoji = MindHealthCalculator.levelEmoji(avgScore),
+                    insight = MindHealthCalculator.insight(avgScore),
+                    showCounselingBanner = MindHealthCalculator.shouldShowCounselingBanner(avgScore),
                     isLoading = false
                 )
             }
         }
-    }
-
-    private fun buildWeeklyTrend(data: List<AnalysisSummaryEntity>): List<Pair<String, Int>> {
-        val today = LocalDate.now()
-        return (3 downTo 0).map { weekOffset ->
-            val weekEnd = today.minusWeeks(weekOffset.toLong())
-            val weekStart = weekEnd.minusDays(6)
-            val label = "${4 - weekOffset}주차"
-            val week = data.filter {
-                it.date >= weekStart.format(fmt) && it.date <= weekEnd.format(fmt)
-            }
-            val weekScore = if (week.isNotEmpty()) {
-                val scores = week.filter { it.mindHealthScore >= 0 }.map { it.mindHealthScore }
-                if (scores.isNotEmpty()) scores.average().toInt().coerceIn(0, 100) else 0
-            } else 0
-            label to weekScore
-        }
-    }
-
-    private fun buildEmotionDistribution(data: List<AnalysisSummaryEntity>): List<Pair<String, Float>> {
-        val valid = data.filter { it.diaryCharCount >= 50 }
-        if (valid.isEmpty()) return emptyList()
-        val joy = valid.count { it.diaryEmotionLabel.contains("기쁨") || it.diaryEmotionLabel.contains("행복") }
-        val gratitude = valid.count { it.diaryEmotionLabel.contains("감사") }
-        val neutral = valid.count { it.diaryEmotionLabel.contains("보통") || it.diaryEmotionLabel.contains("중립") }
-        val sadness = valid.count { it.diaryEmotionLabel.contains("슬픔") || it.diaryEmotionLabel.contains("우울") }
-        val total = valid.size.toFloat()
-        return listOf(
-            "😊 기쁨" to (joy / total),
-            "🙏 감사" to (gratitude / total),
-            "😐 중립" to (neutral / total),
-            "😢 슬픔" to (sadness / total)
-        ).filter { it.second > 0f }
     }
 }

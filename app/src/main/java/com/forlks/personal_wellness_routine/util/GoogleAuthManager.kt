@@ -29,9 +29,9 @@ class GoogleAuthManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        // TODO: Google Cloud Console에서 발급한 웹 클라이언트 ID로 교체하세요
-        // 예: "123456789-abc123.apps.googleusercontent.com"
-        const val WEB_CLIENT_ID = "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
+        // 개발용 OAuth 클라이언트 ID (project: well-flow, installed app type)
+        // 운영 배포 시 Play Store 등록 후 웹 앱 타입 Client ID로 교체 필요
+        const val WEB_CLIENT_ID = "599273408114-h9jmti2d3n6nb826h9ja1vdjh8a7rspp.apps.googleusercontent.com"
     }
 
     private val credentialManager = CredentialManager.create(context)

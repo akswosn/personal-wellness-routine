@@ -28,6 +28,12 @@ class AnalysisRepository @Inject constructor(
         return dao.getFrom(from)
     }
 
+    suspend fun getByYearMonth(year: Int, month: Int): List<AnalysisSummaryEntity> {
+        val from = java.time.YearMonth.of(year, month).atDay(1).toString()
+        val to   = java.time.YearMonth.of(year, month).atEndOfMonth().toString()
+        return dao.getRange(from, to)
+    }
+
     suspend fun countPositiveDiaries(): Int = dao.countPositiveDiaries()
     suspend fun countTotalDiaries(): Int = dao.countTotalDiaries()
 }

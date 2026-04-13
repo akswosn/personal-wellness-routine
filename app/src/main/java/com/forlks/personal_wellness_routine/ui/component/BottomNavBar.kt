@@ -17,8 +17,8 @@ val bottomNavItems = listOf(
     BottomNavItem("홈", Icons.Filled.Home, Screen.Home.route),
     BottomNavItem("루틴", Icons.Filled.List, Screen.RoutineList.route),
     BottomNavItem("일기", Icons.Filled.Book, Screen.Diary.route),
-    BottomNavItem("통계", Icons.Filled.BarChart, Screen.Stats.route),
-    BottomNavItem("대화", Icons.Filled.Chat, Screen.KakaoImport.route)
+    BottomNavItem("대화", Icons.Filled.Chat, Screen.KakaoImport.route),
+    BottomNavItem("통계", Icons.Filled.BarChart, Screen.Stats.route)
 )
 
 @Composable

@@ -75,7 +75,8 @@ fun WellFlowNavGraph(
                 onBack = { navController.popBackStack() },
                 onCreateRoutine = { navController.navigate(Screen.RoutineCreate.route) },
                 onEditRoutine = { id -> navController.navigate(Screen.RoutineEdit.createRoute(id)) },
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigate(route) },
+                onNavigateToAchievement = { navController.navigate(Screen.RoutineAchievement.route) }
             )
         }
 
@@ -140,7 +141,15 @@ fun WellFlowNavGraph(
         }
 
         composable(Screen.KakaoCalendar.route) {
-            KakaoCalendarScreen(onBack = { navController.popBackStack() })
+            KakaoCalendarScreen(
+                onBack = { navController.popBackStack() },
+                onNavigate = { route ->
+                    when (route) {
+                        Screen.KakaoImport.route -> navController.popBackStack()
+                        else -> navController.navigate(route)
+                    }
+                }
+            )
         }
 
         composable(

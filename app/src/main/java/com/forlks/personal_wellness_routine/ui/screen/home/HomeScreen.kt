@@ -132,8 +132,8 @@ fun HomeScreen(
                             Screen.Home.route        -> { }
                             Screen.RoutineList.route -> onNavigateToRoutines()
                             Screen.Diary.route       -> onNavigateToDiary()
-                            Screen.Stats.route       -> onNavigateToStats()
                             Screen.KakaoImport.route -> onNavigateToKakao()
+                            Screen.Stats.route       -> onNavigateToStats()
                         }
                     }
                 )
