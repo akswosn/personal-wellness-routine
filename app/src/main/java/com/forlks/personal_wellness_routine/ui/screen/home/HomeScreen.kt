@@ -20,8 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.forlks.personal_wellness_routine.BuildConfig
 import com.forlks.personal_wellness_routine.ui.component.AD_BANNER_HEIGHT
 import com.forlks.personal_wellness_routine.ui.component.AdBannerView
 import com.forlks.personal_wellness_routine.ui.component.BottomNavBar
@@ -56,8 +57,8 @@ fun HomeScreen(
     val dateString = today.format(dateFormatter)
     val emojis = listOf("😢", "😔", "😐", "🙂", "😊")
 
-    // 광고 배너 높이만큼 하단 여백 추가 (콘텐츠가 배너 뒤로 가리지 않도록)
-    val adBottomPadding = if (BuildConfig.ADS_ENABLED) AD_BANNER_HEIGHT else 0.dp
+    // 광고 배너 높이만큼 하단 여백 추가 (Debug 플레이스홀더·Release 실광고 모두 동일 영역 확보)
+    val adBottomPadding = AD_BANNER_HEIGHT
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -97,6 +98,14 @@ fun HomeScreen(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "설정",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             },
@@ -109,7 +118,7 @@ fun HomeScreen(
                             Screen.RoutineList.route -> onNavigateToRoutines()
                             Screen.Diary.route       -> onNavigateToDiary()
                             Screen.Stats.route       -> onNavigateToStats()
-                            Screen.Settings.route    -> onNavigateToSettings()
+                            Screen.KakaoImport.route -> onNavigateToKakao()
                         }
                     }
                 )

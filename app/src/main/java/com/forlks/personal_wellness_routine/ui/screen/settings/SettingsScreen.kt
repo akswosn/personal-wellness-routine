@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.forlks.personal_wellness_routine.BuildConfig
 import com.forlks.personal_wellness_routine.ui.screen.character.CharacterViewModel
 import com.forlks.personal_wellness_routine.ui.screen.onboarding.OnboardingViewModel
 
@@ -166,7 +167,7 @@ fun SettingsScreen(
                     headlineContent = { Text("앱 버전") },
                     trailingContent = {
                         Text(
-                            text = "v3.0",
+                            text = "v${BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

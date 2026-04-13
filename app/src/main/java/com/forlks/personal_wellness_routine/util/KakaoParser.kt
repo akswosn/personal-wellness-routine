@@ -102,14 +102,22 @@ object KakaoParser {
     // ── Main parse ─────────────────────────────────────────────────────────────
 
     suspend fun parseAndAnalyze(context: Context, uri: Uri, fileName: String): ChatAnalysisResult {
-        // URI 영구 권한 확보 (SecurityException 무시)
-        ensureUriPermission(context, uri)
-
+        // URI 스킴에 따라 InputStream 획득
+        // - file://  : 캐시 복사본이므로 File.inputStream() 사용 (권한 불필요)
+        // - content//: ContentResolver 사용 + 영구 권한 시도
         val lines = try {
-            context.contentResolver.openInputStream(uri)
-                ?.bufferedReader(Charsets.UTF_8)
-                ?.readLines()
-                ?: emptyList()
+            val inputStream = when (uri.scheme) {
+                "file" -> {
+                    val path = uri.path ?: throw SecurityException("파일 경로가 올바르지 않습니다.")
+                    java.io.File(path).inputStream()
+                }
+                else -> {
+                    ensureUriPermission(context, uri)
+                    context.contentResolver.openInputStream(uri)
+                        ?: throw SecurityException("파일 접근 권한이 없습니다. 파일을 다시 선택해주세요.")
+                }
+            }
+            inputStream.bufferedReader(Charsets.UTF_8).use { it.readLines() }
         } catch (e: SecurityException) {
             throw SecurityException("파일 접근 권한이 없습니다. 파일을 다시 선택해주세요.", e)
         }

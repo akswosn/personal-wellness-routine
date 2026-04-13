@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -20,7 +23,7 @@ val AD_BANNER_HEIGHT = 50.dp
 /**
  * AdMob 배너 광고 컴포넌트
  *
- * - Debug   (ADS_ENABLED=false): 아무것도 렌더링하지 않음 (height=0)
+ * - Debug   (ADS_ENABLED=false): 회색 플레이스홀더 영역 표시 (레이아웃 공간 확보)
  * - Release (ADS_ENABLED=true) : 실제 AdView (BANNER 사이즈) 표시
  *
  * 사용처에서 Scaffold contentPadding 하단에 [AD_BANNER_HEIGHT]를 추가해야
@@ -28,7 +31,23 @@ val AD_BANNER_HEIGHT = 50.dp
  */
 @Composable
 fun AdBannerView(modifier: Modifier = Modifier) {
-    if (!BuildConfig.ADS_ENABLED) return   // Debug: 광고 없음
+    if (!BuildConfig.ADS_ENABLED) {
+        // Debug: 광고 영역 플레이스홀더 (레이아웃 검증용)
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(AD_BANNER_HEIGHT)
+                .background(Color.Gray.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "광고 영역",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+        }
+        return
+    }
 
     Box(
         modifier = modifier

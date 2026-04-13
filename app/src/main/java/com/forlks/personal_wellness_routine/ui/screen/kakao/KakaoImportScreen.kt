@@ -54,20 +54,40 @@ fun KakaoImportScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // GetContent() 는 임시 권한만 부여 → 화면 전환 후 만료됨
-    // OpenDocument() + takePersistableUriPermission 으로 영구 읽기 권한 확보
+    // 내부저장소 권한 문제 근본 해결:
+    // content:// URI 권한은 화면 전환 후 만료될 수 있으므로
+    // 파일 선택 직후 앱 캐시 디렉터리로 즉시 복사 → file:// URI 전달
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        uri?.let {
-            // 영구 읽기 권한 취득 — 일부 기기에서 SecurityException 발생 가능 → 무시
+        uri?.let { originalUri ->
+            // 원본 파일 이름 추출
+            val fileName = try {
+                context.contentResolver.query(
+                    originalUri, null, null, null, null
+                )?.use { cursor ->
+                    val nameIdx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (cursor.moveToFirst() && nameIdx >= 0) cursor.getString(nameIdx)
+                    else "kakao_chat.txt"
+                } ?: "kakao_chat.txt"
+            } catch (_: Exception) { "kakao_chat.txt" }
+
+            // 캐시 디렉터리로 파일 복사 (권한 문제 우회)
             try {
-                context.contentResolver.takePersistableUriPermission(
-                    it,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: SecurityException) { /* provider 가 persistable 권한을 지원하지 않음 */ }
-            onFileSelected(it.toString())
+                val cacheFile = java.io.File(context.cacheDir, fileName)
+                context.contentResolver.openInputStream(originalUri)?.use { input ->
+                    cacheFile.outputStream().use { output -> input.copyTo(output) }
+                }
+                onFileSelected(android.net.Uri.fromFile(cacheFile).toString())
+            } catch (_: Exception) {
+                // 복사 실패 시 원본 URI 로 fallback (영구 권한 시도)
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        originalUri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: SecurityException) { }
+                onFileSelected(originalUri.toString())
+            }
         }
     }
 
