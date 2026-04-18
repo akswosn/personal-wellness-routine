@@ -19,14 +19,26 @@ import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineCreateScree
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineEditScreen
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineListScreen
 import com.forlks.personal_wellness_routine.ui.screen.settings.SettingsScreen
+import com.forlks.personal_wellness_routine.ui.screen.splash.WellFlowSplashScreen
 import com.forlks.personal_wellness_routine.ui.screen.stats.StatsScreen
 
 @Composable
 fun WellFlowNavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String   // 스플래시 이후 이동할 실제 목적지
 ) {
-    NavHost(navController = navController, startDestination = startDestination) {
+    // 항상 Splash 화면부터 시작 → 2.7초 후 startDestination으로 이동
+    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+
+        composable(Screen.Splash.route) {
+            WellFlowSplashScreen(
+                onDone = {
+                    navController.navigate(startDestination) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
 
         composable(Screen.LoginChoice.route) {
             LoginChoiceScreen(
@@ -133,10 +145,12 @@ fun WellFlowNavGraph(
         composable(Screen.KakaoImport.route) {
             KakaoImportScreen(
                 onBack = { navController.popBackStack() },
-                onFileSelected = { uri ->
-                    navController.navigate(Screen.KakaoAnalyzing.createRoute(uri))
-                },
-                onCalendar = { navController.navigate(Screen.KakaoCalendar.route) }
+                onCalendar = { navController.navigate(Screen.KakaoCalendar.route) },
+                onAnalysisDone = { id ->
+                    navController.navigate(Screen.KakaoTemperature.createRoute(id)) {
+                        popUpTo(Screen.KakaoImport.route) { inclusive = false }
+                    }
+                }
             )
         }
 

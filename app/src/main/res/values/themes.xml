@@ -6,8 +6,8 @@
 
     <!-- 스플래시 테마 -->
     <style name="Theme.WellFlow.Splash" parent="Theme.SplashScreen">
-        <!-- 새 아이콘 배경과 어울리는 하늘색 -->
-        <item name="windowSplashScreenBackground">#4AAEE4</item>
+        <!-- 딥 포레스트 세이지 — 스플래시 아이콘 배경 그라디언트 시작점과 일치 -->
+        <item name="windowSplashScreenBackground">#1A3020</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <!-- 2초 유지 (API 한계상 실제 유지는 MainActivity keepSplashOn 으로 보장) -->
         <item name="windowSplashScreenAnimationDuration">2000</item>

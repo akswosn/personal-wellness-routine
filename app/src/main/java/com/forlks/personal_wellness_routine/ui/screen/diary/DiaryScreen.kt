@@ -187,6 +187,49 @@ fun DiaryScreen(
                 }
             }
 
+            // 2-B. 마음 건강도 상세분석 바로가기 카드
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigate(Screen.MindHealth.route) },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = WellGreen.copy(alpha = 0.08f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text("💙", fontSize = 22.sp)
+                            Column {
+                                Text(
+                                    "마음 건강도 분석",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = WellGreen
+                                )
+                                Text(
+                                    "달력으로 월별 감정 흐름 확인",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Text("›", fontSize = 20.sp, color = WellGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
             // 3. 날짜 헤더 + 수정/삭제 버튼 (조회 모드)
             item {
                 Row(

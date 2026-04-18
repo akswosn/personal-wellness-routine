@@ -76,14 +76,18 @@ object DailyHealthCalculator {
         else -> "😩"
     }
 
-    /** 오늘기분 이모지 → moodScore(0~20) 변환 */
+    /**
+     * 오늘기분 이모지 → moodScore 변환
+     * 5단계 균등 배분: 4 / 8 / 12 / 16 / 20
+     * (0점 제거 — 최소 4점 보장)
+     */
     fun moodEmojiToScore(emoji: String): Float = when (emoji) {
-        "😊" -> 20f
-        "🙂" -> 16f
-        "😐" -> 10f
-        "😔" -> 5f
-        "😢" -> 0f
-        else  -> 10f  // 기본값
+        "😊" -> 20f   // 최고
+        "🙂" -> 16f   // 좋음
+        "😐" -> 12f   // 보통
+        "😔" -> 8f    // 나쁨
+        "😢" -> 4f    // 최악
+        else  -> 12f  // 기본값 = 보통
     }
 
     /** 루틴달성률(0~1) → routineScore(0~25) 변환 */

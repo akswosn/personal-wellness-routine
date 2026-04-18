@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    마음흐름 스플래시 아이콘 — 새 앱 아이콘과 동일한 디자인
-    (AndroidX SplashScreen API: windowSplashScreenAnimatedIcon 용)
-    배경색은 themes.xml windowSplashScreenBackground 에서 지정
+    마음흐름 스플래시 아이콘 v3 — Kinetic Flow
+    컨셉: 좌하→우상 대각 모션 스트라이프 + 빛나는 상승 물방울 + 에너지 링 + 상승 파티클
+    배경색: themes.xml  windowSplashScreenBackground = #1A3020 (딥 포레스트 세이지)
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
@@ -11,81 +11,154 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- ① 배경: 하늘 → 산호 그라디언트 -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ① 배경: 좌하 딥포레스트 → 우상 세이지 그린 대각선 그라디언트            -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
     <path android:pathData="M0,0 H108 V108 H0 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="54" android:startY="0"
-                android:endX="54" android:endY="108"
+                android:startX="4"   android:startY="104"
+                android:endX="104"   android:endY="4"
                 android:type="linear">
-                <item android:offset="0"    android:color="#FF4AAEE4"/>
-                <item android:offset="0.35" android:color="#FF7FCCE8"/>
-                <item android:offset="0.58" android:color="#FFFABCA0"/>
-                <item android:offset="1"    android:color="#FFF47860"/>
+                <item android:offset="0"    android:color="#FF0F1C12"/>
+                <item android:offset="0.45" android:color="#FF1E3D26"/>
+                <item android:offset="1"    android:color="#FF3A6640"/>
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- ② 태양 글로우 -->
-    <path android:pathData="M46,48 a21,21 0 1,0 42,0 a21,21 0 1,0 -42,0"
-        android:fillColor="#60F4A060"/>
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ② 모션 스트라이프 — 좌하→우상 대각선 속도감 (반투명 흰색 빛줄기)        -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <path android:pathData="M-24,92 L44,-4"
+        android:strokeColor="#16FFFFFF"
+        android:strokeWidth="20"
+        android:fillColor="#00000000"/>
+    <path android:pathData="M-2,108 L68,0"
+        android:strokeColor="#10FFFFFF"
+        android:strokeWidth="14"
+        android:fillColor="#00000000"/>
+    <path android:pathData="M30,112 L102,6"
+        android:strokeColor="#0BFFFFFF"
+        android:strokeWidth="9"
+        android:fillColor="#00000000"/>
+    <path android:pathData="M66,112 L118,28"
+        android:strokeColor="#07FFFFFF"
+        android:strokeWidth="6"
+        android:fillColor="#00000000"/>
 
-    <!-- ③ 태양 본체 -->
-    <path android:pathData="M52,48 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0"
-        android:fillColor="#F4804C"/>
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ③ 에너지 오빗 링 (아우터) — 반투명 세이지 스트로크                       -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <path android:pathData="M16,54 a38,38,0,1,0,76,0 a38,38,0,1,0,-76,0"
+        android:strokeColor="#388FB48F"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"/>
 
-    <!-- ④ 뒤 민트 파도 -->
-    <path android:pathData="M-2,50 C14,42 32,38 50,46 C60,51 66,50 78,40 C90,32 104,40 110,44 L110,110 L-2,110 Z">
+    <!-- ③-B 에너지 오빗 링 (이너) -->
+    <path android:pathData="M26,54 a28,28,0,1,0,56,0 a28,28,0,1,0,-56,0"
+        android:strokeColor="#528FB48F"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"/>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ④ 중앙 물방울 — 위를 향해 솟는 역동적 형태 (흰색 → 세이지 그라디언트)   -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <path android:pathData="M54,22 C43,33 34,45 34,57 C34,67.5 43,76 54,76 C65,76 74,67.5 74,57 C74,45 65,33 54,22 Z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:startX="54" android:startY="38"
-                android:endX="54" android:endY="110"
+                android:startX="54" android:startY="22"
+                android:endX="54"   android:endY="76"
                 android:type="linear">
-                <item android:offset="0"   android:color="#FF86D8C8"/>
-                <item android:offset="0.4" android:color="#FF5EC4B4"/>
-                <item android:offset="1"   android:color="#FFF4B090"/>
+                <item android:offset="0"    android:color="#FFFFFFFF"/>
+                <item android:offset="0.3"  android:color="#FFEEFAEE"/>
+                <item android:offset="0.65" android:color="#FFCCE8CC"/>
+                <item android:offset="1"    android:color="#FF8FB48F"/>
             </gradient>
         </aapt:attr>
     </path>
 
-    <!-- ⑤ 크림 하이라이트 파도 -->
-    <path android:pathData="M-2,62 C16,56 34,60 54,58 C74,56 92,62 110,58 L110,110 L-2,110 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:startX="54" android:startY="56"
-                android:endX="54" android:endY="110"
-                android:type="linear">
-                <item android:offset="0"   android:color="#D8F5E2D0"/>
-                <item android:offset="0.4" android:color="#C0F4D8C0"/>
-                <item android:offset="1"   android:color="#90F4B898"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- ④-B 물방울 내부 반사 하이라이트 (왼쪽 상단 빛 반사) -->
+    <path android:pathData="M46,30 C42,39 41,50 43,58"
+        android:strokeColor="#58FFFFFF"
+        android:strokeWidth="4"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"/>
 
-    <!-- ⑥ 앞 복숭아 파도 -->
-    <path android:pathData="M-2,72 C18,67 38,70 58,68 C78,66 96,72 110,68 L110,110 L-2,110 Z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:startX="54" android:startY="66"
-                android:endX="54" android:endY="110"
-                android:type="linear">
-                <item android:offset="0"   android:color="#FFF5D8C0"/>
-                <item android:offset="0.5" android:color="#FFF4B088"/>
-                <item android:offset="1"   android:color="#FFF4906A"/>
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- ④-C 물방울 작은 반사 포인트 (상단) -->
+    <path android:pathData="M57,25 a2.5,2.5,0,1,0,5,0 a2.5,2.5,0,1,0,-5,0"
+        android:fillColor="#90FFFFFF"/>
 
-    <!-- ⑦ 별 1 (왼쪽 중간) -->
-    <path android:pathData="M26,43 L27.8,38.2 L29.6,43 L34.4,44.8 L29.6,46.6 L27.8,51.4 L26,46.6 L21.2,44.8 Z"
-        android:fillColor="#FFFFFBE8"/>
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ⑤ 상승 파티클 — 크기·위치 다양, 위쪽일수록 작아지는 원근감               -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
 
-    <!-- ⑧ 별 2 (왼쪽 위, 작은) -->
-    <path android:pathData="M39,28 L40.2,24.4 L41.4,28 L45,29.2 L41.4,30.4 L40.2,34 L39,30.4 L35.4,29.2 Z"
-        android:fillColor="#FFFFFBE8"/>
+    <!-- 큰 파티클 (좌측) -->
+    <path android:pathData="M23,35 a5,5,0,1,0,10,0 a5,5,0,1,0,-10,0"
+        android:fillColor="#92FFFFFF"/>
 
-    <!-- ⑨ 별 3 (오른쪽) -->
-    <path android:pathData="M88,36 L89.6,31.2 L91.2,36 L96,37.6 L91.2,39.2 L89.6,44 L88,39.2 L83.2,37.6 Z"
-        android:fillColor="#FFFFFBE8"/>
+    <!-- 큰 파티클 (우측) -->
+    <path android:pathData="M78,26 a4,4,0,1,0,8,0 a4,4,0,1,0,-8,0"
+        android:fillColor="#80C8E8C8"/>
+
+    <!-- 중간 파티클 (좌) -->
+    <path android:pathData="M17,62 a2.8,2.8,0,1,0,5.6,0 a2.8,2.8,0,1,0,-5.6,0"
+        android:fillColor="#72FFFFFF"/>
+
+    <!-- 중간 파티클 (우) -->
+    <path android:pathData="M88,54 a2.8,2.8,0,1,0,5.6,0 a2.8,2.8,0,1,0,-5.6,0"
+        android:fillColor="#72C8E8C8"/>
+
+    <!-- 작은 파티클 상단 (좌) -->
+    <path android:pathData="M36,14 a2,2,0,1,0,4,0 a2,2,0,1,0,-4,0"
+        android:fillColor="#62FFFFFF"/>
+
+    <!-- 작은 파티클 상단 (우) -->
+    <path android:pathData="M70,17 a2,2,0,1,0,4,0 a2,2,0,1,0,-4,0"
+        android:fillColor="#62FFFFFF"/>
+
+    <!-- 미세 파티클 (좌하) -->
+    <path android:pathData="M12,82 a1.5,1.5,0,1,0,3,0 a1.5,1.5,0,1,0,-3,0"
+        android:fillColor="#50FFFFFF"/>
+
+    <!-- 미세 파티클 (우하) -->
+    <path android:pathData="M93,82 a1.5,1.5,0,1,0,3,0 a1.5,1.5,0,1,0,-3,0"
+        android:fillColor="#50C8E8C8"/>
+
+    <!-- 미세 파티클 (최상단 중앙) -->
+    <path android:pathData="M52,10 a1.2,1.2,0,1,0,2.4,0 a1.2,1.2,0,1,0,-2.4,0"
+        android:fillColor="#40FFFFFF"/>
+
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+    <!-- ⑥ 십자(×) 반짝임 — 파티클에 광채 추가                                   -->
+    <!-- ─────────────────────────────────────────────────────────────────────── -->
+
+    <!-- 십자 (좌 큰 파티클) -->
+    <path android:pathData="M28,35 L28,26 M23.5,30.5 L32.5,30.5"
+        android:strokeColor="#C0FFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"/>
+
+    <!-- 십자 (우 큰 파티클) -->
+    <path android:pathData="M82,26 L82,18 M78,22 L86,22"
+        android:strokeColor="#A0C8E8C8"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"/>
+
+    <!-- 작은 십자 (우측 중간 파티클) -->
+    <path android:pathData="M90.8,54 L90.8,48 M88,51 L93.6,51"
+        android:strokeColor="#70C8E8C8"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"/>
+
+    <!-- 미니 십자 (좌상단 작은 파티클) -->
+    <path android:pathData="M38,14 L38,9 M35.5,11.5 L40.5,11.5"
+        android:strokeColor="#60FFFFFF"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"/>
 
 </vector>

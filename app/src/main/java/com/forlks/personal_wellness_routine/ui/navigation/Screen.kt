@@ -1,6 +1,9 @@
 package com.forlks.personal_wellness_routine.ui.navigation
 
 sealed class Screen(val route: String) {
+    // 전체화면 Compose 스플래시 (항상 최초 진입)
+    object Splash : Screen("splash")
+
     // 최초 진입 선택
     object LoginChoice : Screen("login_choice")
 

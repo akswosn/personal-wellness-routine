@@ -6,7 +6,8 @@
 
     <!-- 다크 모드 스플래시 — 스플래시 배경을 어둡게 -->
     <style name="Theme.WellFlow.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#1A2A3A</item>
+        <!-- 다크모드도 딥 포레스트 유지 — 스플래시 아이콘과 매끄럽게 연결 -->
+        <item name="windowSplashScreenBackground">#0F1C12</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
         <item name="windowSplashScreenAnimationDuration">2000</item>
         <item name="postSplashScreenTheme">@style/Theme.Personalwellnessroutine</item>

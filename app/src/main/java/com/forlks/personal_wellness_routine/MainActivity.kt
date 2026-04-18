@@ -23,13 +23,11 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var prefs: AppPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 스플래시 시작 시각 기록
+        // 시스템 스플래시는 최소(~300ms)만 표시 — 실제 풍성한 스플래시는 WellFlowSplashScreen(Compose)가 담당
         val splashStartMs = SystemClock.elapsedRealtime()
-        val splashMinMs = 2_000L   // 최소 2초 표시
+        val splashMinMs = 300L
 
         val splashScreen = installSplashScreen()
-
-        // keepOnScreen: 2초가 채워질 때까지 스플래시 유지
         splashScreen.setKeepOnScreenCondition {
             SystemClock.elapsedRealtime() - splashStartMs < splashMinMs
         }
