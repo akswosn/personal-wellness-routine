@@ -54,6 +54,26 @@ data class ChatAnalysisResult(
     val analyzedAt: Long
 )
 
+/** 날짜별 카카오 대화 분석 결과 */
+data class DailyChatResult(
+    val id: Long = 0,
+    val chatAnalysisId: Long = 0,
+    val date: String,
+    val totalMessages: Int,
+    val positiveCount: Int,
+    val negativeCount: Int,
+    val neutralCount: Int,
+    val temperature: Float,
+    val relationshipScore: Float
+) {
+    val temperatureLevel: TemperatureLevel get() = when {
+        temperature >= 70f -> TemperatureLevel.WARM
+        temperature >= 50f -> TemperatureLevel.NORMAL
+        temperature >= 30f -> TemperatureLevel.COOL
+        else               -> TemperatureLevel.COLD
+    }
+}
+
 // ── Character ─────────────────────────────────────────────────────────────────
 enum class CharacterType(
     val displayName: String,
@@ -105,7 +125,7 @@ fun nextLevelWp(totalWp: Int): Int = when {
 
 // ── Wellness Points ───────────────────────────────────────────────────────────
 object WpEvent {
-    const val ATTENDANCE = "ATTENDANCE"        // +5
+    const val ATTENDANCE = "ATTENDANCE"        // +10 (기분/일기/루틴/카톡 중 하루 최초 행동 시 자동 적립)
     const val STREAK_7 = "STREAK_7"            // +10
     const val STREAK_30 = "STREAK_30"          // +30
     const val ROUTINE = "ROUTINE"              // +2 per routine (max +20/day)
@@ -113,7 +133,7 @@ object WpEvent {
     const val CHAT_ANALYSIS = "CHAT_ANALYSIS"  // +5
 
     fun points(event: String): Int = when (event) {
-        ATTENDANCE -> 5
+        ATTENDANCE -> 10
         STREAK_7 -> 10
         STREAK_30 -> 30
         ROUTINE -> 2

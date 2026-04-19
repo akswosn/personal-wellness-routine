@@ -13,19 +13,47 @@ import com.forlks.personal_wellness_routine.ui.screen.diary.MindHealthScreen
 import com.forlks.personal_wellness_routine.ui.screen.home.HomeScreen
 import com.forlks.personal_wellness_routine.ui.screen.stats.RoutineAchievementScreen
 import com.forlks.personal_wellness_routine.ui.screen.kakao.*
+import com.forlks.personal_wellness_routine.ui.screen.onboarding.LoginChoiceScreen
 import com.forlks.personal_wellness_routine.ui.screen.onboarding.OnboardingScreen
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineCreateScreen
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineEditScreen
 import com.forlks.personal_wellness_routine.ui.screen.routine.RoutineListScreen
 import com.forlks.personal_wellness_routine.ui.screen.settings.SettingsScreen
+import com.forlks.personal_wellness_routine.ui.screen.splash.WellFlowSplashScreen
 import com.forlks.personal_wellness_routine.ui.screen.stats.StatsScreen
 
 @Composable
 fun WellFlowNavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String   // 스플래시 이후 이동할 실제 목적지
 ) {
-    NavHost(navController = navController, startDestination = startDestination) {
+    // 항상 Splash 화면부터 시작 → 2.7초 후 startDestination으로 이동
+    NavHost(navController = navController, startDestination = Screen.Splash.route) {
+
+        composable(Screen.Splash.route) {
+            WellFlowSplashScreen(
+                onDone = {
+                    navController.navigate(startDestination) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.LoginChoice.route) {
+            LoginChoiceScreen(
+                onGoogleLogin = {
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(Screen.LoginChoice.route) { inclusive = true }
+                    }
+                },
+                onSkip = {
+                    navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(Screen.LoginChoice.route) { inclusive = true }
+                    }
+                }
+            )
+        }
 
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
@@ -59,7 +87,8 @@ fun WellFlowNavGraph(
                 onBack = { navController.popBackStack() },
                 onCreateRoutine = { navController.navigate(Screen.RoutineCreate.route) },
                 onEditRoutine = { id -> navController.navigate(Screen.RoutineEdit.createRoute(id)) },
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigate(route) },
+                onNavigateToAchievement = { navController.navigate(Screen.RoutineAchievement.route) }
             )
         }
 
@@ -94,7 +123,8 @@ fun WellFlowNavGraph(
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToCharacter = { navController.navigate(Screen.CharacterSelect.route) }
+                onNavigateToCharacter = { navController.navigate(Screen.CharacterSelect.route) },
+                onNavigateToGoogleLogin = { navController.navigate(Screen.LoginChoice.route) }
             )
         }
 
@@ -115,8 +145,23 @@ fun WellFlowNavGraph(
         composable(Screen.KakaoImport.route) {
             KakaoImportScreen(
                 onBack = { navController.popBackStack() },
-                onFileSelected = { uri ->
-                    navController.navigate(Screen.KakaoAnalyzing.createRoute(uri))
+                onCalendar = { navController.navigate(Screen.KakaoCalendar.route) },
+                onAnalysisDone = { id ->
+                    navController.navigate(Screen.KakaoTemperature.createRoute(id)) {
+                        popUpTo(Screen.KakaoImport.route) { inclusive = false }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.KakaoCalendar.route) {
+            KakaoCalendarScreen(
+                onBack = { navController.popBackStack() },
+                onNavigate = { route ->
+                    when (route) {
+                        Screen.KakaoImport.route -> navController.popBackStack()
+                        else -> navController.navigate(route)
+                    }
                 }
             )
         }

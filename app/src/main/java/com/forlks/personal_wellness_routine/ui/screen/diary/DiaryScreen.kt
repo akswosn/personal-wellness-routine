@@ -24,7 +24,6 @@ import com.forlks.personal_wellness_routine.domain.model.DiaryEntry
 import com.forlks.personal_wellness_routine.ui.component.BottomNavBar
 import com.forlks.personal_wellness_routine.ui.navigation.Screen
 import com.forlks.personal_wellness_routine.ui.theme.WellGreen
-import com.forlks.personal_wellness_routine.ui.theme.WellSurfaceVariant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -49,16 +48,29 @@ fun DiaryScreen(
     }
 
     var displayYearMonth by remember { mutableStateOf(YearMonth.of(selectedLocalDate.year, selectedLocalDate.month)) }
-    var contentText by remember(currentEntry) { mutableStateOf(currentEntry?.content ?: "") }
 
-    LaunchedEffect(currentEntry) { contentText = currentEntry?.content ?: "" }
+    // 편집 모드 여부 — 기존 일기가 있으면 조회 모드로 시작
+    var isEditing by remember { mutableStateOf(false) }
+    // 날짜 바뀌면 편집 모드 초기화
+    LaunchedEffect(selectedDate) { isEditing = false }
+
+    var contentText by remember(currentEntry, isEditing) {
+        mutableStateOf(if (isEditing) (currentEntry?.content ?: "") else "")
+    }
+    // currentEntry 갱신 시(저장 직후) 편집 취소 → 조회 모드 전환
+    LaunchedEffect(currentEntry) {
+        if (!isEditing) contentText = currentEntry?.content ?: ""
+    }
 
     val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val entryDateSet = remember(entries) { entries.associateBy { it.date } }
 
-    // 50자 달성 여부
     val charCount = contentText.length
     val isEnoughChars = charCount >= MIN_CHARS
+
+    // 조회 모드: 오늘이 아닌 날짜도 포함해서 currentEntry 가 있으면 조회
+    val hasEntry = currentEntry != null
+    val showViewMode = hasEntry && !isEditing
 
     Scaffold(
         topBar = {
@@ -126,10 +138,13 @@ fun DiaryScreen(
                 Column {
                     Row(modifier = Modifier.fillMaxWidth()) {
                         daysOfWeekLabels.forEach { label ->
-                            Text(label, modifier = Modifier.weight(1f),
+                            Text(
+                                label,
+                                modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                     Spacer(Modifier.height(4.dp))
@@ -155,8 +170,7 @@ fun DiaryScreen(
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                                 Text(
                                                     date.dayOfMonth.toString(), fontSize = 11.sp,
-                                                    color = if (isSelected) Color.White
-                                                            else MaterialTheme.colorScheme.onSurface,
+                                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                                 )
                                                 if (entry != null) Text(entry.emotionEmoji, fontSize = 9.sp)
@@ -173,100 +187,114 @@ fun DiaryScreen(
                 }
             }
 
-            // 3. 날짜 헤더
+            // 2-B. 마음 건강도 상세분석 바로가기 카드
             item {
-                Text(
-                    "${selectedLocalDate.monthValue}월 ${selectedLocalDate.dayOfMonth}일 오늘의 일기",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // 4. 일기 입력 + 50자 카운터
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(
-                        value = contentText,
-                        onValueChange = { contentText = it },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp),
-                        placeholder = { Text("오늘 하루는 어땠나요? 자유롭게 적어보세요.\n(50자 이상 작성하면 마음 건강도를 분석할 수 있어요)") },
-                        minLines = 5
-                    )
-                    // 50자 카운터
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (!isEnoughChars) {
-                            Text(
-                                "조금 더 작성하면 마음 건강도를 분석할 수 있어요 ✍️",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            Text(
-                                "마음 건강도 분석 가능 ✅",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = WellGreen,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        Text(
-                            "$charCount / $MIN_CHARS",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isEnoughChars) WellGreen
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // 5. 마음 건강도 미리보기 (50자 달성 시 슬라이드업)
-            item {
-                AnimatedVisibility(
-                    visible = isEnoughChars,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigate(Screen.MindHealth.route) },
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = WellGreen.copy(alpha = 0.08f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    MindHealthPreviewCard(
-                        emotionScore = currentEntry?.emotionScore ?: 0f,
-                        emotionLabel = currentEntry?.emotionLabel ?: ""
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text("💙", fontSize = 22.sp)
+                            Column {
+                                Text(
+                                    "마음 건강도 분석",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = WellGreen
+                                )
+                                Text(
+                                    "달력으로 월별 감정 흐름 확인",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Text("›", fontSize = 20.sp, color = WellGreen, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
-            // 6. AI 분석 결과 (저장 후)
-            if (currentEntry != null && currentEntry.emotionScore != 0f) {
-                item {
-                    val score = currentEntry.emotionScore
-                    val emoji = when {
-                        score >= 0.5f -> "😄"; score >= 0.1f -> "🙂"
-                        score > -0.1f -> "😐"; score > -0.5f -> "😕"; else -> "😢"
+            // 3. 날짜 헤더 + 수정/삭제 버튼 (조회 모드)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "${selectedLocalDate.monthValue}월 ${selectedLocalDate.dayOfMonth}일 일기",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (showViewMode) {
+                        TextButton(onClick = {
+                            contentText = currentEntry?.content ?: ""
+                            isEditing = true
+                        }) {
+                            Text("수정", color = WellGreen, fontWeight = FontWeight.SemiBold)
+                        }
+                        TextButton(onClick = {
+                            currentEntry?.let { viewModel.deleteDiary(it) }
+                        }) {
+                            Text("삭제", color = MaterialTheme.colorScheme.error)
+                        }
                     }
+                }
+            }
+
+            // 4-A. 조회 모드: 등록된 일기 노출
+            if (showViewMode && currentEntry != null) {
+                item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = WellSurfaceVariant)
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
+                            // 감정 배지
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(currentEntry.emotionEmoji.ifBlank { "😐" }, fontSize = 22.sp)
+                                Text(
+                                    currentEntry.emotionLabel.ifBlank { "보통" },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = WellGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            HorizontalDivider()
+                            // 일기 본문
                             Text(
-                                "🤖 AI 분석: $emoji ${currentEntry.emotionLabel} (${"%.2f".format(score)})",
+                                text = currentEntry.content,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 22.sp
                             )
+                            // 태그
                             if (currentEntry.tags.isNotEmpty()) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     currentEntry.tags.take(5).forEach { tag ->
                                         Surface(
                                             shape = RoundedCornerShape(16.dp),
-                                            color = WellGreen.copy(alpha = 0.15f)
+                                            color = WellGreen.copy(alpha = 0.12f)
                                         ) {
                                             Text(
                                                 "#$tag",
@@ -283,43 +311,118 @@ fun DiaryScreen(
                 }
             }
 
-            // 7. 카카오 자동 초안
-            item {
-                OutlinedButton(
-                    onClick = { /* 카카오 초안 적용 */ },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("💬 오늘 카카오 대화에서 자동 초안 가져오기")
+            // 4-B. 편집/작성 모드
+            if (!showViewMode) {
+                // 입력 필드 + 초기화
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                if (isEditing) "일기 수정 중" else "오늘 일기 쓰기",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (contentText.isNotBlank()) {
+                                TextButton(onClick = { contentText = "" }) {
+                                    Text("초기화", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                        OutlinedTextField(
+                            value = contentText,
+                            onValueChange = { contentText = it },
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp),
+                            placeholder = { Text("오늘 하루는 어땠나요? 자유롭게 적어보세요.\n(50자 이상 작성하면 마음 건강도를 분석할 수 있어요)") },
+                            minLines = 5
+                        )
+                        // 50자 카운터
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (!isEnoughChars) {
+                                Text(
+                                    "조금 더 작성하면 마음 건강도를 분석할 수 있어요 ✍️",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    "마음 건강도 분석 가능 ✅",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = WellGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Text(
+                                "$charCount / $MIN_CHARS",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isEnoughChars) WellGreen else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // 마음 건강도 미리보기
+                item {
+                    AnimatedVisibility(
+                        visible = isEnoughChars,
+                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                    ) {
+                        MindHealthPreviewCard(
+                            emotionScore = currentEntry?.emotionScore ?: 0f,
+                            emotionLabel = currentEntry?.emotionLabel ?: ""
+                        )
+                    }
+                }
+
+                // 저장/취소 버튼
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                val entry = DiaryEntry(
+                                    id = currentEntry?.id ?: 0,
+                                    date = selectedDate,
+                                    content = contentText,
+                                    emotionEmoji = currentEntry?.emotionEmoji ?: "😐",
+                                    emotionScore = currentEntry?.emotionScore ?: 0f,
+                                    emotionLabel = currentEntry?.emotionLabel ?: "보통",
+                                    tags = currentEntry?.tags ?: emptyList(),
+                                    isAutoGenerated = false
+                                )
+                                viewModel.saveDiary(entry)
+                                isEditing = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = isEnoughChars,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = WellGreen,
+                                disabledContainerColor = WellGreen.copy(alpha = 0.38f)
+                            )
+                        ) {
+                            Text(if (isEnoughChars) "일기 저장  (+3 WP)" else "50자 이상 작성해야 저장할 수 있어요")
+                        }
+                        if (isEditing) {
+                            OutlinedButton(
+                                onClick = { isEditing = false },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("취소")
+                            }
+                        }
+                    }
                 }
             }
 
-            // 8. 저장 버튼 (50자 미만 → 비활성)
-            item {
-                Button(
-                    onClick = {
-                        val entry = DiaryEntry(
-                            id = currentEntry?.id ?: 0,
-                            date = selectedDate,
-                            content = contentText,
-                            emotionEmoji = currentEntry?.emotionEmoji ?: "😐",
-                            emotionScore = currentEntry?.emotionScore ?: 0f,
-                            emotionLabel = currentEntry?.emotionLabel ?: "보통",
-                            tags = currentEntry?.tags ?: emptyList(),
-                            isAutoGenerated = false
-                        )
-                        viewModel.saveDiary(entry)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = isEnoughChars,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WellGreen,
-                        disabledContainerColor = WellGreen.copy(alpha = 0.38f)
-                    )
-                ) {
-                    Text(if (isEnoughChars) "일기 저장  (+3 WP)" else "50자 이상 작성해야 저장할 수 있어요")
-                }
-                Spacer(Modifier.height(8.dp))
-            }
+            item { Spacer(Modifier.height(8.dp)) }
         }
     }
 }
@@ -327,9 +430,9 @@ fun DiaryScreen(
 @Composable
 private fun MindHealthPreviewCard(emotionScore: Float, emotionLabel: String) {
     val (previewEmoji, previewLevel) = when {
-        emotionScore >= 0.3f  -> "☀️" to "밝음"
-        emotionScore >= 0f    -> "⛅" to "보통"
-        else                  -> "🌧" to "흐림"
+        emotionScore >= 0.3f -> "☀️" to "밝음"
+        emotionScore >= 0f   -> "⛅" to "보통"
+        else                 -> "🌧" to "흐림"
     }
     Card(
         modifier = Modifier.fillMaxWidth(),

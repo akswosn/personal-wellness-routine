@@ -5,14 +5,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.forlks.personal_wellness_routine.BuildConfig
 import com.forlks.personal_wellness_routine.ui.screen.character.CharacterViewModel
 import com.forlks.personal_wellness_routine.ui.screen.onboarding.OnboardingViewModel
 
@@ -21,23 +25,24 @@ import com.forlks.personal_wellness_routine.ui.screen.onboarding.OnboardingViewM
 fun SettingsScreen(
     onBack: () -> Unit,
     onNavigateToCharacter: () -> Unit,
+    onNavigateToGoogleLogin: () -> Unit = {},
     onboardingViewModel: OnboardingViewModel = hiltViewModel(),
-    characterViewModel: CharacterViewModel = hiltViewModel()
+    characterViewModel: CharacterViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
     val onboardingState by onboardingViewModel.uiState.collectAsState()
     val characterUiState by characterViewModel.uiState.collectAsState()
     val characterState = characterUiState.characterState
+    val settingsState by settingsViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
-    // Local user name state, initialized from viewModel
+    // 이름 상태
     var userName by remember { mutableStateOf("") }
     LaunchedEffect(onboardingState.userName) {
         if (userName.isEmpty() && onboardingState.userName.isNotEmpty()) {
             userName = onboardingState.userName
         }
     }
-
-    // Local notification toggle state
-    var notificationEnabled by remember { mutableStateOf(true) }
 
     Scaffold(
         topBar = {
@@ -59,9 +64,7 @@ fun SettingsScreen(
         ) {
 
             // ── Section: 프로필 ──────────────────────────────────────────────
-            item {
-                SectionHeader(title = "프로필")
-            }
+            item { SectionHeader(title = "프로필") }
 
             item {
                 Column(
@@ -97,9 +100,7 @@ fun SettingsScreen(
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
 
             // ── Section: 캐릭터 ──────────────────────────────────────────────
-            item {
-                SectionHeader(title = "캐릭터")
-            }
+            item { SectionHeader(title = "캐릭터") }
 
             item {
                 ListItem(
@@ -108,10 +109,7 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = characterState?.type?.emoji ?: "🐱",
-                                fontSize = 32.sp
-                            )
+                            Text(text = characterState?.type?.emoji ?: "🐱", fontSize = 32.sp)
                             Column {
                                 Text(
                                     text = characterState?.name ?: "솔이",
@@ -127,46 +125,117 @@ fun SettingsScreen(
                         }
                     },
                     trailingContent = {
-                        TextButton(onClick = onNavigateToCharacter) {
-                            Text("캐릭터 변경")
+                        TextButton(onClick = onNavigateToCharacter) { Text("캐릭터 변경") }
+                    }
+                )
+            }
+
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
+
+            // ── Section: 계정 및 백업 ─────────────────────────────────────────
+            item { SectionHeader(title = "계정 및 백업") }
+
+            item {
+                ListItem(
+                    headlineContent = { Text("구글 계정") },
+                    supportingContent = {
+                        Text(
+                            text = if (settingsState.isGoogleLoggedIn)
+                                settingsState.googleEmail
+                            else
+                                "로그인되지 않음",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        if (settingsState.isGoogleLoggedIn) {
+                            TextButton(
+                                onClick = {
+                                    settingsViewModel.signOut(context)
+                                }
+                            ) {
+                                Text("로그아웃", color = MaterialTheme.colorScheme.error)
+                            }
+                        } else {
+                            TextButton(onClick = onNavigateToGoogleLogin) {
+                                Text("로그인")
+                            }
                         }
                     }
                 )
             }
 
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
-
-            // ── Section: 알림 ────────────────────────────────────────────────
-            item {
-                SectionHeader(title = "알림")
-            }
-
             item {
                 ListItem(
-                    headlineContent = { Text("루틴 알림") },
-                    supportingContent = { Text("예약된 루틴 시간에 알림을 받습니다") },
+                    headlineContent = { Text("구글 드라이브로 내보내기") },
+                    supportingContent = { Text("데이터를 구글 드라이브에 백업합니다") },
                     trailingContent = {
-                        Switch(
-                            checked = notificationEnabled,
-                            onCheckedChange = { notificationEnabled = it }
-                        )
+                        IconButton(
+                            onClick = { /* TODO: Drive export */ },
+                            enabled = settingsState.isGoogleLoggedIn
+                        ) {
+                            Icon(
+                                Icons.Filled.CloudUpload,
+                                contentDescription = "내보내기",
+                                tint = if (settingsState.isGoogleLoggedIn)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
                     }
                 )
             }
 
+            item {
+                ListItem(
+                    headlineContent = { Text("구글 드라이브에서 가져오기") },
+                    supportingContent = { Text("백업 데이터를 복원합니다") },
+                    trailingContent = {
+                        IconButton(
+                            onClick = { /* TODO: Drive import */ },
+                            enabled = settingsState.isGoogleLoggedIn
+                        ) {
+                            Icon(
+                                Icons.Filled.CloudDownload,
+                                contentDescription = "가져오기",
+                                tint = if (settingsState.isGoogleLoggedIn)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
+                    }
+                )
+            }
+
+            // 로그인 안내 문구
+            if (!settingsState.isGoogleLoggedIn) {
+                item {
+                    Text(
+                        text = "구글 로그인 후 내보내기/가져오기를 사용할 수 있습니다",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp)) }
 
+            // ── Section: 알림 — 숨김 처리 (WorkManager 미구현) ─────────────────
+            // item { SectionHeader(title = "알림") }
+            // item { ListItem(...) }
+
             // ── Section: 정보 ────────────────────────────────────────────────
-            item {
-                SectionHeader(title = "정보")
-            }
+            item { SectionHeader(title = "정보") }
 
             item {
                 ListItem(
                     headlineContent = { Text("앱 버전") },
                     trailingContent = {
                         Text(
-                            text = "v3.0",
+                            text = "v${BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

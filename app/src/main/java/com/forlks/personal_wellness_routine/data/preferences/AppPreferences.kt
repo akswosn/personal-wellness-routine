@@ -25,6 +25,10 @@ class AppPreferences @Inject constructor(
         val KEY_CHARACTER_NAME = stringPreferencesKey("character_name")
         val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val KEY_ADMOB_APP_ID = stringPreferencesKey("admob_app_id")
+        // 구글 로그인 관련
+        val KEY_GOOGLE_LOGGED_IN = booleanPreferencesKey("google_logged_in")
+        val KEY_GOOGLE_ACCOUNT_EMAIL = stringPreferencesKey("google_account_email")
+        val KEY_LOGIN_CHOICE_DONE = booleanPreferencesKey("login_choice_done")
     }
 
     val isFirstLaunch: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -66,6 +70,39 @@ class AppPreferences @Inject constructor(
         dataStore.edit { prefs ->
             prefs[KEY_ONBOARDING_DONE] = true
             prefs[KEY_IS_FIRST_LAUNCH] = false
+        }
+    }
+
+    // ── 구글 로그인 ───────────────────────────────────────────────────────────
+
+    val isGoogleLoggedIn: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_GOOGLE_LOGGED_IN] ?: false
+    }
+
+    val googleAccountEmail: Flow<String> = dataStore.data.map { prefs ->
+        prefs[KEY_GOOGLE_ACCOUNT_EMAIL] ?: ""
+    }
+
+    val isLoginChoiceDone: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_LOGIN_CHOICE_DONE] ?: false
+    }
+
+    suspend fun setGoogleLoggedIn(email: String) {
+        dataStore.edit { prefs ->
+            prefs[KEY_GOOGLE_LOGGED_IN] = true
+            prefs[KEY_GOOGLE_ACCOUNT_EMAIL] = email
+            prefs[KEY_LOGIN_CHOICE_DONE] = true
+        }
+    }
+
+    suspend fun setLoginChoiceDone() {
+        dataStore.edit { prefs -> prefs[KEY_LOGIN_CHOICE_DONE] = true }
+    }
+
+    suspend fun setGoogleLoggedOut() {
+        dataStore.edit { prefs ->
+            prefs[KEY_GOOGLE_LOGGED_IN] = false
+            prefs[KEY_GOOGLE_ACCOUNT_EMAIL] = ""
         }
     }
 }

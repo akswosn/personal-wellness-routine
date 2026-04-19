@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.forlks.personal_wellness_routine.data.db.entity.AnalysisSummaryEntity
 import com.forlks.personal_wellness_routine.data.repository.AnalysisRepository
+import com.forlks.personal_wellness_routine.data.repository.DailyHealthRepository
 import com.forlks.personal_wellness_routine.data.repository.DiaryRepository
 import com.forlks.personal_wellness_routine.data.repository.RoutineRepository
 import com.forlks.personal_wellness_routine.data.repository.WellnessPointRepository
 import com.forlks.personal_wellness_routine.domain.model.DiaryEntry
 import com.forlks.personal_wellness_routine.domain.model.WpEvent
+import com.forlks.personal_wellness_routine.util.DailyHealthCalculator
+import com.forlks.personal_wellness_routine.util.MindHealthCalculator
 import com.forlks.personal_wellness_routine.util.RoutineAchievementCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +34,8 @@ class DiaryViewModel @Inject constructor(
     private val diaryRepository: DiaryRepository,
     private val wellnessPointRepository: WellnessPointRepository,
     private val analysisRepository: AnalysisRepository,
-    private val routineRepository: RoutineRepository
+    private val routineRepository: RoutineRepository,
+    private val dailyHealthRepository: DailyHealthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiaryUiState())
@@ -73,11 +77,14 @@ class DiaryViewModel @Inject constructor(
 
             // 50자 이상일 때만 WP 적립 + 분석 스냅샷 저장
             if (entry.content.length >= 50) {
+                // 출석 WP 자동 적립 (하루 최초 1회)
+                wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
                 wellnessPointRepository.earnPoints(
                     eventType = WpEvent.DIARY,
                     description = "일기 작성 (+3 WP)"
                 )
                 saveAnalysisSnapshot(scoredEntry)
+                updateDailyHealthScore(scoredEntry)
             }
 
             _uiState.update { it.copy(currentEntry = scoredEntry) }
@@ -88,20 +95,34 @@ class DiaryViewModel @Inject constructor(
         val (routineCompleted, routineTotal) = routineRepository.getTodayStats()
         val routineScore = RoutineAchievementCalculator.dailyScore(routineCompleted, routineTotal)
 
+        // 단어 기반 마음건강도
+        val mindHealthScore = MindHealthCalculator.calculateFromText(entry.content)
+
         val existing = analysisRepository.getByDate(entry.date)
         val snapshot = AnalysisSummaryEntity(
-            id = existing?.id ?: 0,
-            date = entry.date,
-            routineTotal = routineTotal,
-            routineCompleted = routineCompleted,
-            routineScore = routineScore,
-            routineGrade = RoutineAchievementCalculator.gradeFrom(routineScore),
-            diaryCharCount = entry.content.length,
+            id                = existing?.id ?: 0,
+            date              = entry.date,
+            routineTotal      = routineTotal,
+            routineCompleted  = routineCompleted,
+            routineScore      = routineScore,
+            routineGrade      = RoutineAchievementCalculator.gradeFrom(routineScore),
+            diaryCharCount    = entry.content.length,
             diaryEmotionLabel = entry.emotionLabel,
             diaryEmotionScore = entry.emotionScore,
-            mindHealthScore = -1
+            mindHealthScore   = mindHealthScore
         )
         analysisRepository.upsert(snapshot)
+    }
+
+    /** 일기 저장 후 DailyHealthScore의 diaryScore 항목 업데이트 (v0.0.2 레벨 기반) */
+    private suspend fun updateDailyHealthScore(entry: DiaryEntry) {
+        val mindHealth = MindHealthCalculator.calculateFromText(entry.content)
+        if (mindHealth < 0) return // 데이터 부족 → 스킵
+
+        // 원점수 → 레벨(1~5) → 서브점수(5/10/15/20/25)
+        val level = MindHealthCalculator.scoreToLevel(mindHealth)
+        val diaryScore = MindHealthCalculator.levelToSubScore(level)
+        dailyHealthRepository.updateToday(diaryScore = diaryScore)
     }
 
     fun deleteDiary(entry: DiaryEntry) {
@@ -114,19 +135,9 @@ class DiaryViewModel @Inject constructor(
     }
 
     private fun analyzeSentiment(content: String): Float {
-        val positiveWords = setOf(
-            "좋아", "행복", "기쁘", "사랑", "감사", "고마워", "설레", "신나", "재미",
-            "즐거", "최고", "멋있", "대단", "훌륭", "완벽", "보람", "뿌듯", "희망",
-            "긍정", "웃음", "밝", "활기", "성공", "달성", "건강", "평화", "여유"
-        )
-        val negativeWords = setOf(
-            "싫어", "힘들", "슬프", "우울", "화나", "짜증", "최악", "실망", "미워",
-            "지쳐", "아파", "걱정", "불안", "무서", "후회", "억울", "외로", "피곤",
-            "스트레스", "괴롭", "두렵", "실패", "좌절", "포기", "답답", "막막"
-        )
         var pos = 0; var neg = 0
-        positiveWords.forEach { if (content.contains(it)) pos++ }
-        negativeWords.forEach { if (content.contains(it)) neg++ }
+        MindHealthCalculator.POSITIVE_WORDS.forEach { if (content.contains(it)) pos++ }
+        MindHealthCalculator.NEGATIVE_WORDS.forEach { if (content.contains(it)) neg++ }
         val total = pos + neg
         return if (total == 0) 0f
         else ((pos - neg).toFloat() / total.toFloat()).coerceIn(-1f, 1f)

@@ -1,5 +1,6 @@
 package com.forlks.personal_wellness_routine.ui.screen.routine
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,11 +8,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -29,6 +32,7 @@ fun RoutineListScreen(
     onCreateRoutine: () -> Unit,
     onEditRoutine: (Long) -> Unit,
     onNavigate: (String) -> Unit,
+    onNavigateToAchievement: () -> Unit = {},
     viewModel: RoutineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -80,6 +84,14 @@ fun RoutineListScreen(
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "뒤로가기"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToAchievement) {
+                        Icon(
+                            imageVector = Icons.Filled.BarChart,
+                            contentDescription = "달성도 분석"
                         )
                     }
                 }
@@ -153,6 +165,54 @@ fun RoutineListScreen(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // ── 루틴 달성도 상세분석 바로가기 카드 ───────────────────────
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateToAchievement() },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = WellGreen.copy(alpha = 0.08f)
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text("📈", fontSize = 24.sp)
+                                    Column {
+                                        Text(
+                                            "루틴 달성도 분석",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = WellGreen
+                                        )
+                                        Text(
+                                            "달력으로 월별 달성 현황 확인",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "›",
+                                    fontSize = 20.sp,
+                                    color = WellGreen,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
                     items(uiState.routines, key = { it.id }) { routine ->
                         RoutineListCard(
                             routine = routine,

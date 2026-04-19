@@ -2,9 +2,11 @@ package com.forlks.personal_wellness_routine.ui.screen.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.forlks.personal_wellness_routine.data.db.entity.DailyHealthScoreEntity
 import com.forlks.personal_wellness_routine.data.preferences.AppPreferences
-import com.forlks.personal_wellness_routine.data.repository.DiaryRepository
 import com.forlks.personal_wellness_routine.data.repository.ChatRepository
+import com.forlks.personal_wellness_routine.data.repository.DailyHealthRepository
+import com.forlks.personal_wellness_routine.data.repository.DiaryRepository
 import com.forlks.personal_wellness_routine.data.repository.RoutineRepository
 import com.forlks.personal_wellness_routine.data.repository.WellnessPointRepository
 import com.forlks.personal_wellness_routine.domain.model.CharacterState
@@ -12,6 +14,7 @@ import com.forlks.personal_wellness_routine.domain.model.CharacterType
 import com.forlks.personal_wellness_routine.domain.model.WpEvent
 import com.forlks.personal_wellness_routine.domain.model.calculateCharacterLevel
 import com.forlks.personal_wellness_routine.domain.model.nextLevelWp
+import com.forlks.personal_wellness_routine.util.DailyHealthCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,7 +33,8 @@ data class HomeUiState(
     val streak: Int = 0,
     val emotionEmoji: String = "",
     val latestChatTemp: Float? = null,
-    val characterState: CharacterState? = null
+    val characterState: CharacterState? = null,
+    val dailyHealthScore: DailyHealthScoreEntity? = null  // 일 건강도
 )
 
 @HiltViewModel
@@ -39,7 +43,8 @@ class HomeViewModel @Inject constructor(
     private val routineRepository: RoutineRepository,
     private val diaryRepository: DiaryRepository,
     private val chatRepository: ChatRepository,
-    private val wellnessPointRepository: WellnessPointRepository
+    private val wellnessPointRepository: WellnessPointRepository,
+    private val dailyHealthRepository: DailyHealthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -51,6 +56,7 @@ class HomeViewModel @Inject constructor(
         loadStreak()
         loadLatestChatAnalysis()
         observeWellnessPoints()
+        observeDailyHealthScore()
     }
 
     private fun observeUserName() {
@@ -121,14 +127,22 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun observeDailyHealthScore() {
+        viewModelScope.launch {
+            dailyHealthRepository.observeToday().collect { entity ->
+                _uiState.update { it.copy(dailyHealthScore = entity) }
+            }
+        }
+    }
+
     fun checkIn(emoji: String) {
         viewModelScope.launch {
-            val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val existing = diaryRepository.getDiaryForDate(today)
             _uiState.update { it.copy(emotionEmoji = emoji) }
-            if (existing == null) {
-                // Only update state; actual diary save is handled in DiaryViewModel
-            }
+            // 기분 체크인 → moodScore 업데이트
+            val moodScore = DailyHealthCalculator.moodEmojiToScore(emoji)
+            dailyHealthRepository.updateToday(moodScore = moodScore)
+            // 출석 WP 자동 적립 (하루 최초 1회)
+            wellnessPointRepository.earnPoints(WpEvent.ATTENDANCE, "출석 체크 (+10 WP)")
         }
     }
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "599273408114",
+    "project_id": "well-flow",
+    "storage_bucket": "well-flow.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:599273408114:android:d7c7b05ca669cdae3be4eb",
+        "android_client_info": {
+          "package_name": "com.forlks.personal_wellness_routine"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJOsM_-7Sknk-2Fn7hB1p0H8MUtMN5rww"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

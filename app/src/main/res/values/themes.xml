@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Personalwellnessroutine" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 기본 앱 테마 (라이트) -->
+    <style name="Theme.Personalwellnessroutine" parent="Theme.AppCompat.DayNight.NoActionBar" />
 
+    <!-- 스플래시 테마 -->
     <style name="Theme.WellFlow.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">#0F766E</item>
+        <!-- 딥 포레스트 세이지 — 스플래시 아이콘 배경 그라디언트 시작점과 일치 -->
+        <item name="windowSplashScreenBackground">#1A3020</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="windowSplashScreenAnimationDuration">600</item>
+        <!-- 2초 유지 (API 한계상 실제 유지는 MainActivity keepSplashOn 으로 보장) -->
+        <item name="windowSplashScreenAnimationDuration">2000</item>
         <item name="postSplashScreenTheme">@style/Theme.Personalwellnessroutine</item>
     </style>
+
 </resources>
