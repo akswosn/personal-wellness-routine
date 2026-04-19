@@ -9,3 +9,7 @@ sss.DS_Store
 local.properties
 /app/cluade/
 /.idea/
+/wellflow-release.jks
+*.jks
+*.keystore
+keystore.properties

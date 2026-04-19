@@ -7,6 +7,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
+import com.forlks.personal_wellness_routine.BuildConfig
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,9 +30,10 @@ class GoogleAuthManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        // 개발용 OAuth 클라이언트 ID (project: well-flow, installed app type)
-        // 운영 배포 시 Play Store 등록 후 웹 앱 타입 Client ID로 교체 필요
-        const val WEB_CLIENT_ID = "599273408114-h9jmti2d3n6nb826h9ja1vdjh8a7rspp.apps.googleusercontent.com"
+        // BuildConfig.GCP_WEB_CLIENT_ID 로 빌드 타입별 자동 주입
+        // Debug  → build.gradle.kts debug 블록 (개발용 ID)
+        // Release → keystore.properties gcpWebClientId (운영용 ID)
+        val WEB_CLIENT_ID: String get() = BuildConfig.GCP_WEB_CLIENT_ID
     }
 
     private val credentialManager = CredentialManager.create(context)

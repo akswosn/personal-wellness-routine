@@ -1,9 +1,18 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
+}
+
+// ── keystore.properties 로드 (존재할 때만) ────────────────────────────────────
+// 파일이 없으면 릴리즈 서명 없이 빌드 (CI나 로컬 디버그 빌드 시 정상 동작)
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().also { props ->
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { props.load(it) }
 }
 
 android {
@@ -15,9 +24,22 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.0.2"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // ── 릴리즈 서명 설정 ─────────────────────────────────────────────────────
+    // keystore.properties 가 있을 때만 서명 설정 활성화
+    if (keystorePropsFile.exists()) {
+        signingConfigs {
+            create("release") {
+                storeFile     = file(keystoreProps.getProperty("storeFile") ?: "../wellflow-release.jks")
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias      = keystoreProps.getProperty("keyAlias") ?: "wellflow"
+                keyPassword   = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildFeatures {
@@ -28,27 +50,44 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            // ── 광고 OFF ──────────────────────────────────
+
+            // ── 광고 OFF ──────────────────────────────────────────────────
             buildConfigField("boolean", "ADS_ENABLED", "false")
-            // 테스트 AdMob App ID (manifest 에서 참조)
             manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
-            // 배너 단위 ID (사용되지 않음 — ADS_ENABLED=false)
             buildConfigField("String", "BANNER_AD_UNIT_ID",
                 "\"ca-app-pub-3940256099942544/6300978111\"")
+
+            // ── GCP OAuth2 (개발용 Client ID) ─────────────────────────────
+            buildConfigField("String", "GCP_WEB_CLIENT_ID",
+                "\"599273408114-h9jmti2d3n6nb826h9ja1vdjh8a7rspp.apps.googleusercontent.com\"")
         }
+
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled   = true
+            isShrinkResources = true   // 미사용 리소스 제거로 AAB 크기 최소화
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // ── 광고 ON ───────────────────────────────────
+
+            // keystore.properties 에 릴리즈 서명 설정이 있으면 적용
+            if (keystorePropsFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+
+            // ── 광고 ON (keystore.properties 값 우선, 없으면 테스트 ID 유지) ─
             buildConfigField("boolean", "ADS_ENABLED", "true")
-            // TODO: 출시 전 실제 AdMob App ID 로 교체
-            manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
-            // TODO: 출시 전 실제 배너 Ad Unit ID 로 교체
+            manifestPlaceholders["admobAppId"] =
+                keystoreProps.getProperty("admobAppId")
+                    ?: "ca-app-pub-3940256099942544~3347511713"   // TODO: 실제 App ID 필요
             buildConfigField("String", "BANNER_AD_UNIT_ID",
-                "\"ca-app-pub-3940256099942544/6300978111\"")
+                "\"${keystoreProps.getProperty("admobBannerUnitId")
+                    ?: "ca-app-pub-3940256099942544/6300978111"}\"")   // TODO: 실제 Unit ID 필요
+
+            // ── GCP OAuth2 (keystore.properties 값 우선, 없으면 개발용 ID) ──
+            buildConfigField("String", "GCP_WEB_CLIENT_ID",
+                "\"${keystoreProps.getProperty("gcpWebClientId")
+                    ?: "599273408114-h9jmti2d3n6nb826h9ja1vdjh8a7rspp.apps.googleusercontent.com"}\"")
         }
     }
 
